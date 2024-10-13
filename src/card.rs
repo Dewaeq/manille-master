@@ -52,7 +52,7 @@ impl From<u64> for Suite {
 // bits 4..=6 are card suite, with Pijkens = 0, Klavers = 1, Koeken = 2, Harten = 3
 // bits 7..=9 are the index of the player that laid the card
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct Card {
     data: u16,
 }

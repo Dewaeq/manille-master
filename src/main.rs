@@ -3,6 +3,7 @@ use std::time::Instant;
 use card::Card;
 use game::Game;
 
+mod array;
 mod bits;
 mod card;
 mod game;
