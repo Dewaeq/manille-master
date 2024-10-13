@@ -35,7 +35,7 @@ impl Game {
         self.dealer = (self.dealer + 1) % 4;
 
         let mut cards = (0..52).collect::<Vec<u64>>();
-        cards.shuffle(&mut thread_rng());
+        cards.shuffle(&mut self.rng);
 
         self.players[0].set_cards(Cards::from_slice(&cards[0..13]));
         self.players[1].set_cards(Cards::from_slice(&cards[13..26]));
