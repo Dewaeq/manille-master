@@ -1,5 +1,5 @@
 use core::fmt;
-use std::ops::BitXor;
+use std::ops::{BitOrAssign, BitXor, BitXorAssign};
 
 use crate::bits::pop_lsb;
 
@@ -144,6 +144,18 @@ impl BitXor<u64> for Cards {
         Cards {
             data: self.data ^ rhs,
         }
+    }
+}
+
+impl BitXorAssign<u64> for Cards {
+    fn bitxor_assign(&mut self, rhs: u64) {
+        self.data ^= rhs;
+    }
+}
+
+impl BitOrAssign<u64> for Cards {
+    fn bitor_assign(&mut self, rhs: u64) {
+        self.data |= rhs;
     }
 }
 

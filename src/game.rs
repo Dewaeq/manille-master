@@ -1,4 +1,4 @@
-use rand::{rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
+use rand::{rngs::ThreadRng, seq::SliceRandom};
 
 use crate::{
     card::{Card, Cards, ALL},
@@ -58,6 +58,7 @@ impl Game {
             let card = self.players[idx].decide(&self);
 
             self.players[idx].toggle_card(card.to_index());
+            self.played_cards |= 1 << card.to_index();
             self.trick.play(card);
         }
 
