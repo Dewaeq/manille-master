@@ -1,4 +1,5 @@
 use core::fmt;
+use std::ops::BitXor;
 
 use crate::bits::pop_lsb;
 
@@ -6,6 +7,8 @@ pub const PIJKENS: u64 = 0b1111111111111;
 pub const KLAVERS: u64 = PIJKENS << 13;
 pub const HARTEN: u64 = PIJKENS << 26;
 pub const KOEKEN: u64 = PIJKENS << 39;
+
+pub const ALL: u64 = PIJKENS | KLAVERS | HARTEN | KOEKEN;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Suite {
@@ -121,6 +124,36 @@ impl Cards {
 
     pub fn into_iter(&self, player: usize) -> CardIterator {
         CardIterator(self.data, player)
+    }
+}
+
+impl BitXor for Cards {
+    type Output = Cards;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        Cards {
+            data: self.data ^ rhs.data,
+        }
+    }
+}
+
+impl BitXor<u64> for Cards {
+    type Output = Cards;
+
+    fn bitxor(self, rhs: u64) -> Self::Output {
+        Cards {
+            data: self.data ^ rhs,
+        }
+    }
+}
+
+impl BitXor<Cards> for u64 {
+    type Output = Cards;
+
+    fn bitxor(self, rhs: Cards) -> Self::Output {
+        Cards {
+            data: self ^ rhs.data,
+        }
     }
 }
 

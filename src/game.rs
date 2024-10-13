@@ -1,7 +1,7 @@
 use rand::{rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 
 use crate::{
-    card::{Card, Cards},
+    card::{Card, Cards, ALL},
     //human_player::HumanPlayer,
     player::Player,
     random_player::RandomPlayer,
@@ -14,8 +14,8 @@ pub struct Game {
     pub trick: Trick,
     pub players: Vec<Box<dyn Player>>,
     pub dealer: usize,
-    rng: ThreadRng,
     pub score: [i32; 4],
+    rng: ThreadRng,
 }
 
 impl Game {
@@ -40,7 +40,11 @@ impl Game {
         self.players[0].set_cards(Cards::from_slice(&cards[0..13]));
         self.players[1].set_cards(Cards::from_slice(&cards[13..26]));
         self.players[2].set_cards(Cards::from_slice(&cards[26..39]));
-        self.players[3].set_cards(Cards::from_slice(&cards[39..]));
+
+        // Quick way to generate last set without aloop
+        let last_set =
+            ALL ^ self.players[0].cards() ^ self.players[1].cards() ^ self.players[2].cards();
+        self.players[3].set_cards(last_set);
     }
 
     pub fn play_trick(&mut self) {

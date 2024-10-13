@@ -11,7 +11,7 @@ mod player;
 mod random_player;
 mod trick;
 
-const N: usize = 20000;
+const N: usize = 80_000;
 
 fn main() {
     assert!(Card::new(34, 0).to_index() == 34);
