@@ -1,6 +1,5 @@
 use std::time::Instant;
 
-use array::Array;
 use card::Card;
 use game::Game;
 

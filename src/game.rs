@@ -1,4 +1,4 @@
-use rand::{rngs::ThreadRng, seq::SliceRandom};
+use rand::{rngs::ThreadRng, seq::SliceRandom, Rng};
 
 use crate::{
     card::{Card, Cards, ALL},
@@ -25,8 +25,8 @@ impl Game {
             game.players.push(Box::new(RandomPlayer::new(i)));
         }
 
+        game.dealer = game.rng.gen_range(0..=3);
         game.deal_cards();
-        game.next_dealer();
 
         game
     }
@@ -37,7 +37,7 @@ impl Game {
     }
 
     fn deal_cards(&mut self) {
-        let mut cards = (0..52).collect::<Vec<u64>>();
+        let mut cards: [u64; 52] = std::array::from_fn(|i| i as u64);
         cards.shuffle(&mut self.rng);
 
         self.players[0].set_cards(Cards::from_slice(&cards[0..13]));
