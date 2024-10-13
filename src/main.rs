@@ -25,9 +25,8 @@ fn main() {
 
     let start = Instant::now();
 
-    for _ in 0..13 {
-        for game in &mut games {
-            game.deal_cards();
+    for game in &mut games {
+        for _ in 0..13 {
             game.play_trick();
         }
     }

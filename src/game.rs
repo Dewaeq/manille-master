@@ -25,15 +25,18 @@ impl Game {
             game.players.push(Box::new(RandomPlayer::new(i)));
         }
 
-        game.dealer = game.rng.gen_range(0..4);
         game.deal_cards();
+        game.next_dealer();
 
         game
     }
 
-    pub fn deal_cards(&mut self) {
+    fn next_dealer(&mut self) -> usize {
         self.dealer = (self.dealer + 1) % 4;
+        self.dealer
+    }
 
+    fn deal_cards(&mut self) {
         let mut cards = (0..52).collect::<Vec<u64>>();
         cards.shuffle(&mut self.rng);
 
@@ -56,13 +59,12 @@ impl Game {
 
             self.players[idx].toggle_card(card.to_index());
             self.trick.play(card);
-
-            //println!("{idx} played {card}");
         }
 
-        self.score[self.trick.winner()] += 1;
+        let winner = self.trick.winner();
 
-        //println!("{}", self.trick.winner());
+        self.score[winner] += 1;
+        self.dealer = winner;
     }
 
     /// controleer of deze speler al dan niet kan volgen
