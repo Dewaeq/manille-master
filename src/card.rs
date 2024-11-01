@@ -205,3 +205,15 @@ impl fmt::Debug for Cards {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Card;
+
+    #[test]
+    fn test_to_index() {
+        assert!(Card::new(34, 0).to_index() == 34);
+        assert!(Card::new(4, 3).to_index() == 4);
+        assert!(Card::new(17, 2).to_index() == 17);
+    }
+}
