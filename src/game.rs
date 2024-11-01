@@ -2,7 +2,6 @@ use rand::{rngs::ThreadRng, seq::SliceRandom, Rng};
 
 use crate::{
     card::{Card, Cards, ALL},
-    //human_player::HumanPlayer,
     player::Player,
     random_player::RandomPlayer,
     trick::Trick,
@@ -31,12 +30,12 @@ impl Game {
         game
     }
 
-    fn next_dealer(&mut self) -> usize {
+    pub fn next_dealer(&mut self) -> usize {
         self.dealer = (self.dealer + 1) % 4;
         self.dealer
     }
 
-    fn deal_cards(&mut self) {
+    pub fn deal_cards(&mut self) {
         let mut cards: [u64; 52] = std::array::from_fn(|i| i as u64);
         cards.shuffle(&mut self.rng);
 
@@ -77,5 +76,26 @@ impl Game {
         } else {
             true
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Game;
+    use crate::card::ALL;
+
+    #[test]
+    fn test_dealing() {
+        let game = Game::new();
+        let mut all_cards = 0;
+
+        for player in &game.players {
+            let cards = player.cards().data;
+            all_cards |= cards;
+
+            assert!(cards.count_ones() == 52 / (game.players.len() as u32));
+        }
+
+        assert!(all_cards == ALL);
     }
 }
