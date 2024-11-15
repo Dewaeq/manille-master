@@ -3,6 +3,7 @@ use crate::{
     game::Game,
 };
 
+pub mod greedy_player;
 pub mod random_player;
 
 pub trait Player {
@@ -11,7 +12,7 @@ pub trait Player {
     fn cards_mut(&mut self) -> &mut Cards;
 
     fn decide(&self, game: &Game) -> Card;
-    
+
     fn set_cards(&mut self, cards: Cards) {
         *self.cards_mut() = cards;
     }

@@ -2,7 +2,7 @@ use rand::{rngs::ThreadRng, seq::SliceRandom, Rng};
 
 use crate::{
     card::{Card, Cards, ALL},
-    players::{random_player::RandomPlayer, Player},
+    players::{greedy_player::GreedyPlayer, random_player::RandomPlayer, Player},
     trick::Trick,
 };
 
@@ -19,8 +19,11 @@ pub struct Game {
 impl Game {
     pub fn new() -> Self {
         let mut game = Game::default();
-        for i in 0..4 {
+        for i in 0..2 {
             game.players.push(Box::new(RandomPlayer::new(i)));
+        }
+        for i in 2..4 {
+            game.players.push(Box::new(GreedyPlayer::new(i)));
         }
 
         game.dealer = game.rng.gen_range(0..=3);
