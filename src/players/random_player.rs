@@ -3,8 +3,9 @@ use rand::{seq::SliceRandom, thread_rng};
 use crate::{
     card::{Card, Cards},
     game::Game,
-    player::Player,
 };
+
+use super::Player;
 
 #[derive(Default)]
 pub struct RandomPlayer {
@@ -22,24 +23,21 @@ impl RandomPlayer {
 }
 
 impl Player for RandomPlayer {
-    fn set_cards(&mut self, cards: Cards) {
-        self.cards = cards;
-    }
-
-    fn toggle_card(&mut self, index: u64) {
-        self.cards.data ^= 1 << index;
-    }
-
     fn cards(&self) -> Cards {
         self.cards
     }
 
+    fn cards_mut(&mut self) -> &mut Cards {
+        &mut self.cards
+    }
+
     fn decide(&self, game: &Game) -> Card {
         let mut rng = thread_rng();
-        let my_cards = self.cards.into_iter(self.index).collect::<Vec<_>>();
+        let my_cards = self.cards.into_iter().collect::<Vec<_>>();
 
         loop {
-            let card = *my_cards.choose(&mut rng).unwrap();
+            let mut card = *my_cards.choose(&mut rng).unwrap();
+            card.set_player(self.index);
 
             if game.is_legal(card) {
                 return card;

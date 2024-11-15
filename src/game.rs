@@ -2,8 +2,7 @@ use rand::{rngs::ThreadRng, seq::SliceRandom, Rng};
 
 use crate::{
     card::{Card, Cards, ALL},
-    player::Player,
-    random_player::RandomPlayer,
+    players::{random_player::RandomPlayer, Player},
     trick::Trick,
 };
 
