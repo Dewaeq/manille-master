@@ -1,7 +1,7 @@
 use core::fmt;
-use std::ops::{BitOrAssign, BitXor, BitXorAssign};
+use std::ops::{BitAnd, BitOrAssign, BitXor, BitXorAssign};
 
-use crate::bits::pop_lsb;
+use crate::bits::{lsb, msb, pop_lsb};
 
 pub const PIJKENS: u64 = 0b1111111111111;
 pub const KLAVERS: u64 = PIJKENS << 13;
@@ -9,6 +9,8 @@ pub const HARTEN: u64 = PIJKENS << 26;
 pub const KOEKEN: u64 = PIJKENS << 39;
 
 pub const ALL: u64 = PIJKENS | KLAVERS | HARTEN | KOEKEN;
+
+pub const SUITES: [Suite; 4] = [Suite::Pijkens, Suite::Klavers, Suite::Harten, Suite::Koeken];
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Suite {
@@ -50,7 +52,8 @@ impl From<u64> for Suite {
 // bit layout:
 // bits 0..=3 are card value, ranging from 0..=12, with 0 being a two, 1 a three, ..., 12 an ace
 // bits 4..=6 are card suite, with Pijkens = 0, Klavers = 1, Koeken = 2, Harten = 3
-// bits 7..=9 are the index of the player that laid the card
+// bits 7..=9 are the index of the player that laid the card,
+//            value 5 means the player is unkown
 
 #[derive(Clone, Copy, Default)]
 pub struct Card {
@@ -58,12 +61,12 @@ pub struct Card {
 }
 
 impl Card {
-    pub fn new(index: u64, player: usize) -> Self {
+    pub fn new(index: u64) -> Self {
         let value = (index % 13) as u16;
         let suite = Suite::from(index);
 
         Self {
-            data: value | ((suite as u16) << 4) | ((player as u16) << 7),
+            data: value | ((suite as u16) << 4) | ((5 as u16) << 7),
         }
     }
 
@@ -78,6 +81,11 @@ impl Card {
     pub fn suite(&self) -> Suite {
         let suite = (self.data >> 4) & 0b111;
         unsafe { std::mem::transmute(suite as u8) }
+    }
+
+    pub fn set_player(&mut self, player: usize) {
+        self.data &= 0b1111111;
+        self.data |= (player as u16) << 7;
     }
 
     pub fn player(&self) -> usize {
@@ -107,6 +115,12 @@ impl fmt::Display for Card {
     }
 }
 
+impl fmt::Debug for Card {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}, player: {}", self.to_string(), self.player())
+    }
+}
+
 #[derive(Default, Clone, Copy)]
 pub struct Cards {
     pub data: u64,
@@ -122,8 +136,56 @@ impl Cards {
         cards
     }
 
-    pub fn into_iter(&self, player: usize) -> CardIterator {
-        CardIterator(self.data, player)
+    pub fn into_iter(&self) -> CardIterator {
+        CardIterator(self.data)
+    }
+
+    pub fn highest_suite(&self, suite: Suite) -> Option<Card> {
+        let masked = self.data & suite.mask();
+
+        if masked != 0 {
+            Some(Card::new(msb(masked)))
+        } else {
+            None
+        }
+    }
+
+    pub fn highest(&self) -> Option<Card> {
+        SUITES
+            .iter()
+            .flat_map(|&suite| self.highest_suite(suite))
+            .reduce(|a, b| if a.value() > b.value() { a } else { b })
+    }
+
+    pub fn lowest_suite(&self, suite: Suite) -> Option<Card> {
+        let masked = self.data & suite.mask();
+
+        if masked != 0 {
+            Some(Card::new(lsb(masked)))
+        } else {
+            None
+        }
+    }
+
+    pub fn lowest(&self) -> Option<Card> {
+        SUITES
+            .iter()
+            .flat_map(|&suite| self.lowest_suite(suite))
+            .reduce(|a, b| if a.value() < b.value() { a } else { b })
+    }
+
+    pub fn has(&self, suite: Suite) -> bool {
+        self.data & suite.mask() != 0
+    }
+}
+
+impl BitAnd<u64> for Cards {
+    type Output = Cards;
+
+    fn bitand(self, rhs: u64) -> Self::Output {
+        Cards {
+            data: self.data & rhs,
+        }
     }
 }
 
@@ -178,7 +240,7 @@ impl BitXor<Cards> for u64 {
 //}
 //}
 
-pub struct CardIterator(u64, usize);
+pub struct CardIterator(u64);
 
 impl Iterator for CardIterator {
     type Item = Card;
@@ -189,7 +251,7 @@ impl Iterator for CardIterator {
         } else {
             let index = pop_lsb(&mut self.0);
 
-            Some(Card::new(index, self.1))
+            Some(Card::new(index))
         }
     }
 }
@@ -198,7 +260,7 @@ impl fmt::Debug for Cards {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let copy = *self;
 
-        for card in copy.into_iter(5) {
+        for card in copy.into_iter() {
             write!(f, "{}, ", card.to_string())?;
         }
 
@@ -212,8 +274,12 @@ mod tests {
 
     #[test]
     fn test_to_index() {
-        assert!(Card::new(34, 0).to_index() == 34);
-        assert!(Card::new(4, 3).to_index() == 4);
-        assert!(Card::new(17, 2).to_index() == 17);
+        assert!(Card::new(34).to_index() == 34);
+        assert!(Card::new(4).to_index() == 4);
+        assert!(Card::new(17).to_index() == 17);
+
+        let mut card = Card::new(26);
+        card.set_player(2);
+        assert!(card.player() == 2);
     }
 }
