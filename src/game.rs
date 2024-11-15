@@ -60,15 +60,15 @@ impl Game {
             self.trick.play(card);
         }
 
-        let winner = self.trick.winner();
+        let winner = self.trick.winner().unwrap();
 
-        self.score[winner] += 1;
-        self.dealer = winner;
+        self.score[winner.player()] += 1;
+        self.dealer = winner.player();
     }
 
     /// controleer of deze speler al dan niet kan volgen
     pub fn is_legal(&self, card: Card) -> bool {
-        if let Some(suite) = self.trick.suite {
+        if let Some(suite) = self.trick.suite() {
             let player = &self.players[card.player()];
 
             player.cards().data & suite.mask() == 0 || card.suite() == suite
