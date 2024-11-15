@@ -10,7 +10,8 @@ pub const KOEKEN: u64 = PIJKENS << 39;
 
 pub const ALL: u64 = PIJKENS | KLAVERS | HARTEN | KOEKEN;
 
-pub const SUITES: [Suite; 4] = [Suite::Pijkens, Suite::Klavers, Suite::Harten, Suite::Koeken];
+pub const ACES: u64 = 1 << 12 | 1 << 25 | 1 << 38 | 1 << 51;
+pub const TWOS: u64 = ACES >> 12;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Suite {
@@ -55,7 +56,7 @@ impl From<u64> for Suite {
 // bits 7..=9 are the index of the player that laid the card,
 //            value 5 means the player is unkown
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub struct Card {
     data: u16,
 }
@@ -151,10 +152,14 @@ impl Cards {
     }
 
     pub fn highest(&self) -> Option<Card> {
-        SUITES
-            .iter()
-            .flat_map(|&suite| self.highest_suite(suite))
-            .reduce(|a, b| if a.value() > b.value() { a } else { b })
+        for i in 0..=12 {
+            let masked = self.data & ACES >> i;
+            if self.data & ACES >> i != 0 {
+                return Some(Card::new(lsb(masked)));
+            }
+        }
+
+        None
     }
 
     pub fn lowest_suite(&self, suite: Suite) -> Option<Card> {
@@ -168,10 +173,14 @@ impl Cards {
     }
 
     pub fn lowest(&self) -> Option<Card> {
-        SUITES
-            .iter()
-            .flat_map(|&suite| self.lowest_suite(suite))
-            .reduce(|a, b| if a.value() < b.value() { a } else { b })
+        for i in 0..=12 {
+            let masked = self.data & TWOS << i;
+            if masked != 0 {
+                return Some(Card::new(lsb(masked)));
+            }
+        }
+
+        None
     }
 
     pub fn has(&self, suite: Suite) -> bool {
