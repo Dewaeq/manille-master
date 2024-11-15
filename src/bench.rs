@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use crate::Game;
+use crate::game::Game;
 
 pub fn bench(size: Option<usize>) {
     let size = size.unwrap_or(80_000);
