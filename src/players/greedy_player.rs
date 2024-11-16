@@ -4,21 +4,17 @@ use crate::{
     game::Game,
 };
 
+#[derive(Default)]
 pub struct GreedyPlayer {
     cards: Cards,
     index: usize,
 }
 
-impl GreedyPlayer {
-    pub fn new(index: usize) -> Self {
-        GreedyPlayer {
-            index,
-            cards: Default::default(),
-        }
-    }
-}
-
 impl Player for GreedyPlayer {
+    fn set_index(&mut self, index: usize) {
+        self.index = index;
+    }
+
     fn cards(&self) -> Cards {
         self.cards
     }

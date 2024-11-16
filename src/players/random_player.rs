@@ -9,20 +9,15 @@ use super::Player;
 
 #[derive(Default)]
 pub struct RandomPlayer {
-    pub cards: Cards,
+    cards: Cards,
     index: usize,
 }
 
-impl RandomPlayer {
-    pub fn new(index: usize) -> Self {
-        RandomPlayer {
-            index,
-            cards: Cards::default(),
-        }
-    }
-}
-
 impl Player for RandomPlayer {
+    fn set_index(&mut self, index: usize) {
+        self.index = index;
+    }
+
     fn cards(&self) -> Cards {
         self.cards
     }

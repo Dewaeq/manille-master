@@ -2,7 +2,7 @@ use rand::{rngs::ThreadRng, seq::SliceRandom, Rng};
 
 use crate::{
     card::{Card, Cards, ALL},
-    players::{greedy_player::GreedyPlayer, random_player::RandomPlayer, Player},
+    players::{Player, PlayerVec},
     trick::Trick,
 };
 
@@ -17,13 +17,15 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new() -> Self {
+    pub fn new(mut players: PlayerVec) -> Self {
         let mut game = Game::default();
-        for i in 0..4 {
-            game.players.push(Box::new(GreedyPlayer::new(i)));
+
+        for (i, player) in players.iter_mut().enumerate() {
+            player.set_index(i);
         }
 
         game.dealer = game.rng.gen_range(0..=3);
+        game.players = players;
         game.deal_cards();
 
         game
@@ -81,11 +83,21 @@ impl Game {
 #[cfg(test)]
 mod tests {
     use super::Game;
-    use crate::card::ALL;
+    use crate::{
+        card::ALL,
+        players::{random_player::RandomPlayer, Player, PlayerVec},
+    };
 
     #[test]
     fn test_dealing() {
-        let game = Game::new();
+        let players: PlayerVec = vec![
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+        ];
+
+        let game = Game::new(players);
         let mut all_cards = 0;
 
         for player in &game.players {

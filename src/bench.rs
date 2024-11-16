@@ -1,6 +1,9 @@
 use std::time::Instant;
 
-use crate::game::Game;
+use crate::{
+    game::Game,
+    players::{greedy_player::GreedyPlayer, Player, PlayerVec},
+};
 
 pub fn bench(size: Option<usize>) {
     let size = size.unwrap_or(800_000);
@@ -9,7 +12,14 @@ pub fn bench(size: Option<usize>) {
     let mut games = Vec::with_capacity(size);
 
     for _ in 0..size {
-        games.push(Game::new());
+        let players: PlayerVec = vec![
+            GreedyPlayer::boxed(),
+            GreedyPlayer::boxed(),
+            GreedyPlayer::boxed(),
+            GreedyPlayer::boxed(),
+        ];
+
+        games.push(Game::new(players));
     }
 
     let start = Instant::now();
