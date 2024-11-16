@@ -153,8 +153,8 @@ impl Cards {
 
     pub fn highest(&self) -> Option<Card> {
         for i in 0..=12 {
-            let masked = self.data & ACES >> i;
-            if self.data & ACES >> i != 0 {
+            let masked = self.data & (ACES >> i);
+            if masked != 0 {
                 return Some(Card::new(lsb(masked)));
             }
         }
@@ -174,7 +174,7 @@ impl Cards {
 
     pub fn lowest(&self) -> Option<Card> {
         for i in 0..=12 {
-            let masked = self.data & TWOS << i;
+            let masked = self.data & (TWOS << i);
             if masked != 0 {
                 return Some(Card::new(lsb(masked)));
             }
