@@ -55,10 +55,10 @@ impl Game {
 
         for i in self.dealer..(self.dealer + 4) {
             let idx = i % 4;
-            let card = self.players[idx].decide(&self);
+            let card = self.players[idx].decide(self);
 
-            self.players[idx].toggle_card(card.to_index());
-            self.played_cards |= 1 << card.to_index();
+            self.players[idx].toggle_card(card.get_index());
+            self.played_cards |= 1 << card.get_index();
             self.trick.play(card);
         }
 

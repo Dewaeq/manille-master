@@ -32,18 +32,6 @@ impl Suite {
     }
 }
 
-impl ToString for Suite {
-    fn to_string(&self) -> String {
-        match self {
-            Suite::Harten => "♥",
-            Suite::Pijkens => "♠",
-            Suite::Klavers => "♣",
-            Suite::Koeken => "♦",
-        }
-        .to_owned()
-    }
-}
-
 impl From<u64> for Suite {
     fn from(value: u64) -> Self {
         unsafe { std::mem::transmute((value / 13) as u8) }
@@ -67,11 +55,11 @@ impl Card {
         let suite = Suite::from(index);
 
         Self {
-            data: value | ((suite as u16) << 4) | ((5 as u16) << 7),
+            data: value | ((suite as u16) << 4) | (5u16 << 7),
         }
     }
 
-    pub fn to_index(&self) -> u64 {
+    pub fn get_index(&self) -> u64 {
         self.value() as u64 + (self.suite() as u64) * 13
     }
 
@@ -92,9 +80,17 @@ impl Card {
     pub fn player(&self) -> usize {
         (self.data >> 7) as usize
     }
+}
 
-    pub fn to_string(&self) -> String {
-        let mut result = self.suite().to_string();
+impl fmt::Display for Card {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut result = match self.suite() {
+            Suite::Harten => "♥",
+            Suite::Pijkens => "♠",
+            Suite::Klavers => "♣",
+            Suite::Koeken => "♦",
+        }
+        .to_owned();
 
         let symbol = match self.value() {
             0..=8 => (self.value() + 2).to_string(),
@@ -106,19 +102,14 @@ impl Card {
         };
 
         result.push_str(&symbol);
-        result
-    }
-}
 
-impl fmt::Display for Card {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.to_string())
+        write!(f, "{}", result)
     }
 }
 
 impl fmt::Debug for Card {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}, player: {}", self.to_string(), self.player())
+        write!(f, "{}, player: {}", self, self.player())
     }
 }
 
@@ -137,7 +128,7 @@ impl Cards {
         cards
     }
 
-    pub fn into_iter(&self) -> CardIterator {
+    pub fn into_iter(self) -> CardIterator {
         CardIterator(self.data)
     }
 
@@ -270,7 +261,7 @@ impl fmt::Debug for Cards {
         let copy = *self;
 
         for card in copy.into_iter() {
-            write!(f, "{}, ", card.to_string())?;
+            write!(f, "{}, ", card)?;
         }
 
         Ok(())
@@ -283,9 +274,9 @@ mod tests {
 
     #[test]
     fn test_to_index() {
-        assert!(Card::new(34).to_index() == 34);
-        assert!(Card::new(4).to_index() == 4);
-        assert!(Card::new(17).to_index() == 17);
+        assert!(Card::new(34).get_index() == 34);
+        assert!(Card::new(4).get_index() == 4);
+        assert!(Card::new(17).get_index() == 17);
 
         let mut card = Card::new(26);
         card.set_player(2);

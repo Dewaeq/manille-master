@@ -14,7 +14,5 @@ fn main() {
     if args.contains(&"bench".to_owned()) {
         let size = args.last().and_then(|x| x.parse::<usize>().ok());
         bench(size);
-
-        return;
     }
 }
