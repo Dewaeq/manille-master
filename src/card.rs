@@ -1,5 +1,5 @@
 use core::fmt;
-use std::ops::{BitAnd, BitOrAssign, BitXor, BitXorAssign};
+use std::ops::{BitAnd, BitOr, BitOrAssign, BitXor, BitXorAssign};
 
 use crate::bits::{lsb, msb, pop_lsb};
 
@@ -22,7 +22,7 @@ pub enum Suite {
 }
 
 impl Suite {
-    pub fn mask(&self) -> u64 {
+    pub const fn mask(&self) -> u64 {
         match self {
             Suite::Pijkens => PIJKENS,
             Suite::Klavers => KLAVERS,
@@ -30,11 +30,15 @@ impl Suite {
             Suite::Koeken => KOEKEN,
         }
     }
-}
 
-impl From<u64> for Suite {
-    fn from(value: u64) -> Self {
-        unsafe { std::mem::transmute((value / 13) as u8) }
+    pub const fn from_index(index: u64) -> Self {
+        match index / 13 {
+            0 => Suite::Pijkens,
+            1 => Suite::Klavers,
+            2 => Suite::Harten,
+            3 => Suite::Koeken,
+            _ => panic!(),
+        }
     }
 }
 
@@ -50,34 +54,34 @@ pub struct Card {
 }
 
 impl Card {
-    pub fn new(index: u64) -> Self {
+    pub const fn new(index: u64) -> Self {
         let value = (index % 13) as u16;
-        let suite = Suite::from(index);
+        let suite = Suite::from_index(index);
 
         Self {
             data: value | ((suite as u16) << 4) | (5u16 << 7),
         }
     }
 
-    pub fn get_index(&self) -> u64 {
+    pub const fn get_index(&self) -> u64 {
         self.value() as u64 + (self.suite() as u64) * 13
     }
 
-    pub fn value(&self) -> u16 {
+    pub const fn value(&self) -> u16 {
         self.data & 0b1111
     }
 
-    pub fn suite(&self) -> Suite {
+    pub const fn suite(&self) -> Suite {
         let suite = (self.data >> 4) & 0b111;
         unsafe { std::mem::transmute(suite as u8) }
     }
 
-    pub fn set_player(&mut self, player: usize) {
+    pub const fn set_player(&mut self, player: usize) {
         self.data &= 0b1111111;
         self.data |= (player as u16) << 7;
     }
 
-    pub fn player(&self) -> usize {
+    pub const fn player(&self) -> usize {
         (self.data >> 7) as usize
     }
 }
@@ -115,7 +119,7 @@ impl fmt::Debug for Card {
 
 #[derive(Default, Clone, Copy)]
 pub struct Cards {
-    pub data: u64,
+    data: u64,
 }
 
 impl Cards {
@@ -128,11 +132,11 @@ impl Cards {
         cards
     }
 
-    pub fn into_iter(self) -> CardIterator {
+    pub const fn into_iter(self) -> CardIterator {
         CardIterator(self.data)
     }
 
-    pub fn highest_suite(&self, suite: Suite) -> Option<Card> {
+    pub const fn highest_of_suite(&self, suite: Suite) -> Option<Card> {
         let masked = self.data & suite.mask();
 
         if masked != 0 {
@@ -142,18 +146,20 @@ impl Cards {
         }
     }
 
-    pub fn highest(&self) -> Option<Card> {
-        for i in 0..=12 {
+    pub const fn highest(&self) -> Option<Card> {
+        let mut i = 0;
+        while i <= 12 {
             let masked = self.data & (ACES >> i);
             if masked != 0 {
                 return Some(Card::new(lsb(masked)));
             }
+            i += 1;
         }
 
         None
     }
 
-    pub fn lowest_suite(&self, suite: Suite) -> Option<Card> {
+    pub const fn lowest_of_suite(&self, suite: Suite) -> Option<Card> {
         let masked = self.data & suite.mask();
 
         if masked != 0 {
@@ -163,19 +169,31 @@ impl Cards {
         }
     }
 
-    pub fn lowest(&self) -> Option<Card> {
-        for i in 0..=12 {
+    pub const fn lowest(&self) -> Option<Card> {
+        let mut i = 0;
+        while i <= 12 {
             let masked = self.data & (TWOS << i);
             if masked != 0 {
                 return Some(Card::new(lsb(masked)));
             }
+            i += 1;
         }
 
         None
     }
 
-    pub fn has(&self, suite: Suite) -> bool {
+    pub const fn has(&self, suite: Suite) -> bool {
         self.data & suite.mask() != 0
+    }
+
+    pub const fn len(&self) -> u32 {
+        self.data.count_ones()
+    }
+}
+
+impl PartialEq<u64> for Cards {
+    fn eq(&self, other: &u64) -> bool {
+        self.data == *other
     }
 }
 
@@ -186,6 +204,21 @@ impl BitAnd<u64> for Cards {
         Cards {
             data: self.data & rhs,
         }
+    }
+}
+
+impl BitOr for Cards {
+    type Output = Cards;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Cards {
+            data: self.data | rhs.data,
+        }
+    }
+}
+impl BitOrAssign for Cards {
+    fn bitor_assign(&mut self, rhs: Self) {
+        self.data |= rhs.data;
     }
 }
 

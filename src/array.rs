@@ -13,7 +13,11 @@ impl<T: Copy + Default, const N: usize> Array<T, N> {
         }
     }
 
-    pub fn push(&mut self, value: T) {
+    pub const fn clear(&mut self) {
+        self.index = 0;
+    }
+
+    pub const fn push(&mut self, value: T) {
         assert!(self.index < N);
 
         self.data[self.index] = value;

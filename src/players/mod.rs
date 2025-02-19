@@ -29,6 +29,6 @@ pub trait Player {
     }
     fn toggle_card(&mut self, index: u64) {
         let cards = self.cards_mut();
-        cards.data ^= 1 << index;
+        *cards ^= 1 << index;
     }
 }

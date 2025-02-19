@@ -11,6 +11,12 @@ pub struct Trick {
 }
 
 impl Trick {
+    pub fn clear(&mut self) {
+        self.cards.clear();
+        self.suite = None;
+        self.winner = None;
+    }
+
     pub fn play(&mut self, card: Card) {
         if self.suite.is_none() {
             self.suite = Some(card.suite());

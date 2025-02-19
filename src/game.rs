@@ -2,7 +2,7 @@ use rand::{rngs::ThreadRng, seq::SliceRandom, Rng};
 
 use crate::{
     card::{Card, Cards, ALL},
-    players::{Player, PlayerVec},
+    players::PlayerVec,
     trick::Trick,
 };
 
@@ -10,7 +10,7 @@ use crate::{
 pub struct Game {
     pub played_cards: Cards,
     pub trick: Trick,
-    pub players: Vec<Box<dyn Player>>,
+    pub players: PlayerVec,
     pub dealer: usize,
     pub score: [i32; 4],
     rng: ThreadRng,
@@ -51,7 +51,7 @@ impl Game {
     }
 
     pub fn play_trick(&mut self) {
-        self.trick = Trick::default();
+        self.trick.clear();
 
         for i in self.dealer..(self.dealer + 4) {
             let idx = i % 4;
@@ -73,7 +73,7 @@ impl Game {
         if let Some(suite) = self.trick.suite() {
             let player = &self.players[card.player()];
 
-            player.cards().data & suite.mask() == 0 || card.suite() == suite
+            player.cards() & suite.mask() == 0 || card.suite() == suite
         } else {
             true
         }
@@ -84,7 +84,7 @@ impl Game {
 mod tests {
     use super::Game;
     use crate::{
-        card::ALL,
+        card::{Cards, ALL},
         players::{random_player::RandomPlayer, Player, PlayerVec},
     };
 
@@ -98,13 +98,13 @@ mod tests {
         ];
 
         let game = Game::new(players);
-        let mut all_cards = 0;
+        let mut all_cards = Cards::default();
 
         for player in &game.players {
-            let cards = player.cards().data;
+            let cards = player.cards();
             all_cards |= cards;
 
-            assert!(cards.count_ones() == 52 / (game.players.len() as u32));
+            assert!(cards.len() == 52 / (game.players.len() as u32));
         }
 
         assert!(all_cards == ALL);
