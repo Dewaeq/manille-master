@@ -39,7 +39,6 @@ impl Game {
 
         let mut cards = [0; 3];
         for i in (0..39).rev() {
-            //let j = self.rng.gen_range(0..=i);
             let j = romu::mod_usize(i + 1);
             indices.swap(i, j);
 
@@ -58,11 +57,12 @@ impl Game {
         self.trick.clear();
 
         for i in self.dealer..(self.dealer + 4) {
-            let idx = i % 4;
-            let card = self.players[idx].decide(self);
+            let player_idx = i % 4;
+            let card = self.players[player_idx].decide(self);
+            let card_idx = card.get_index();
 
-            self.players[idx].toggle_card(card.get_index());
-            self.played_cards |= 1 << card.get_index();
+            self.players[player_idx].toggle_card(card_idx);
+            self.played_cards |= 1 << card_idx;
             self.trick.play(card);
         }
 

@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use crate::{
     game::Game,
-    players::{random_player::RandomPlayer, Player, PlayerVec},
+    players::{greedy_player::GreedyPlayer, random_player::RandomPlayer, Player, PlayerVec},
 };
 
 pub fn bench(size: Option<usize>) {
@@ -13,10 +13,10 @@ pub fn bench(size: Option<usize>) {
 
     for _ in 0..size {
         let players: PlayerVec = vec![
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
+            GreedyPlayer::boxed(),
+            GreedyPlayer::boxed(),
+            GreedyPlayer::boxed(),
+            GreedyPlayer::boxed(),
         ];
 
         games.push(Game::new(players));
