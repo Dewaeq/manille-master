@@ -1,7 +1,10 @@
 use core::fmt;
 use std::ops::{BitAnd, BitOr, BitOrAssign, BitXor, BitXorAssign};
 
-use crate::bits::{lsb, msb, pop_lsb};
+use crate::{
+    array::Array,
+    bits::{lsb, msb, pop_lsb},
+};
 
 pub const PIJKENS: u64 = 0b1111111111111;
 pub const KLAVERS: u64 = PIJKENS << 13;
@@ -138,6 +141,14 @@ impl Cards {
 
     pub const fn into_iter(self) -> CardIterator {
         CardIterator(self.data)
+    }
+
+    pub fn to_array_13(self) -> Array<Card, 13> {
+        CardIterator(self.data).collect::<Array<Card, 13>>()
+    }
+
+    pub fn to_array_52(self) -> Array<Card, 52> {
+        CardIterator(self.data).collect::<Array<Card, 52>>()
     }
 
     pub const fn highest_of_suite(&self, suite: Suite) -> Option<Card> {

@@ -25,10 +25,10 @@ impl Player for RandomPlayer {
     }
 
     fn decide(&self, game: &Game) -> Card {
-        let my_cards = self.cards.into_iter().collect::<Vec<_>>();
+        let my_cards = self.cards.to_array_13();
 
         loop {
-            let mut card = unsafe { *my_cards.get_unchecked(romu::mod_usize(my_cards.len())) };
+            let mut card = my_cards[romu::mod_usize(my_cards.len())];
 
             card.set_player(self.index);
 

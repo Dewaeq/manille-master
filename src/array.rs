@@ -23,6 +23,10 @@ impl<T: Copy + Default, const N: usize> Array<T, N> {
         self.data[self.index] = value;
         self.index += 1;
     }
+
+    pub const fn len(&self) -> usize {
+        self.index
+    }
 }
 
 impl<T: Copy + Default, const N: usize> Index<usize> for Array<T, N> {
@@ -36,5 +40,16 @@ impl<T: Copy + Default, const N: usize> Index<usize> for Array<T, N> {
 impl<T: Copy + Default, const N: usize> Default for Array<T, N> {
     fn default() -> Self {
         Array::new()
+    }
+}
+
+impl<T: Copy + Default, const N: usize> FromIterator<T> for Array<T, N> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut array = Array::new();
+        for x in iter {
+            array.push(x);
+        }
+
+        array
     }
 }
