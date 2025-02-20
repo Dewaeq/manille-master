@@ -1,5 +1,3 @@
-use rand::{rngs::ThreadRng, seq::SliceRandom, Rng};
-
 use crate::{
     card::{Card, Cards, ALL},
     players::PlayerVec,
@@ -13,7 +11,6 @@ pub struct Game {
     pub players: PlayerVec,
     pub dealer: usize,
     pub score: [i32; 4],
-    rng: ThreadRng,
 }
 
 impl Game {
@@ -24,7 +21,8 @@ impl Game {
             player.set_index(i);
         }
 
-        game.dealer = game.rng.gen_range(0..=3);
+        //game.dealer = game.rng.gen_range(0..=3);
+        game.dealer = romu::mod_usize(4);
         game.players = players;
         game.deal_cards();
 
@@ -37,17 +35,23 @@ impl Game {
     }
 
     pub fn deal_cards(&mut self) {
-        let mut cards: [u64; 52] = std::array::from_fn(|i| i as u64);
-        cards.shuffle(&mut self.rng);
+        let mut indices: [u64; 52] = std::array::from_fn(|i| i as u64);
 
-        self.players[0].set_cards(Cards::from_slice(&cards[0..13]));
-        self.players[1].set_cards(Cards::from_slice(&cards[13..26]));
-        self.players[2].set_cards(Cards::from_slice(&cards[26..39]));
+        let mut cards = [0; 3];
+        for i in (0..39).rev() {
+            //let j = self.rng.gen_range(0..=i);
+            let j = romu::mod_usize(i + 1);
+            indices.swap(i, j);
 
-        // Quick way to generate last set without aloop
-        let last_set =
-            ALL ^ self.players[0].cards() ^ self.players[1].cards() ^ self.players[2].cards();
-        self.players[3].set_cards(last_set);
+            cards[i / 13] |= 1 << indices[i];
+        }
+
+        self.players[0].cards_mut().set_data(cards[0]);
+        self.players[1].cards_mut().set_data(cards[1]);
+        self.players[2].cards_mut().set_data(cards[2]);
+        self.players[3]
+            .cards_mut()
+            .set_data(ALL ^ cards[0] ^ cards[1] ^ cards[2]);
     }
 
     pub fn play_trick(&mut self) {
