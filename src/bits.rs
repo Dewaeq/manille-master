@@ -12,3 +12,12 @@ pub const fn pop_lsb(data: &mut u64) -> u64 {
 
     lsb
 }
+
+pub fn select_random_set_bit(mut data: u64) -> u64 {
+    let bit = romu::mod_u32(data.count_ones());
+    for _ in 0..bit {
+        data &= data - 1;
+    }
+
+    lsb(data)
+}

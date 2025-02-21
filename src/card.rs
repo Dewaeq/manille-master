@@ -3,7 +3,7 @@ use std::ops::{BitAnd, BitOr, BitOrAssign, BitXor, BitXorAssign};
 
 use crate::{
     array::Array,
-    bits::{lsb, msb, pop_lsb},
+    bits::{lsb, msb, pop_lsb, select_random_set_bit},
 };
 
 pub const PIJKENS: u64 = 0b1111111111111;
@@ -172,6 +172,11 @@ impl Cards {
 
     pub fn into_array_52(self) -> Array<Card, 52> {
         CardIterator(self.data).collect::<Array<_, 52>>()
+    }
+
+    pub fn pick_random_card(&self) -> Card {
+        let index = select_random_set_bit(self.data);
+        Card::new(index)
     }
 
     pub const fn highest_of_suite(&self, suite: Suite) -> Option<Card> {

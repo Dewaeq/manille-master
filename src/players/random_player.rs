@@ -25,16 +25,8 @@ impl Player for RandomPlayer {
     }
 
     fn decide(&self, game: &Game) -> Card {
-        let my_cards = self.cards.into_array_13();
-
-        loop {
-            let mut card = my_cards[romu::mod_usize(my_cards.len())];
-
-            card.set_player(self.index);
-
-            if game.is_legal(card) {
-                return card;
-            }
-        }
+        let mut card = self.cards.pick_random_card();
+        card.set_player(self.index);
+        card
     }
 }
