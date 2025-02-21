@@ -10,3 +10,4 @@ romu = "0.6.0"
 
 [profile.release]
 debug = true
+overflow-checks = false
