@@ -158,6 +158,10 @@ impl Cards {
         cards
     }
 
+    pub const fn set_data(&mut self, data: u64) {
+        self.data = data;
+    }
+
     pub const fn into_iter(self) -> CardIterator {
         CardIterator(self.data)
     }

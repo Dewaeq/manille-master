@@ -1,5 +1,3 @@
-use rand::{seq::SliceRandom, thread_rng, Rng};
-
 use crate::{
     card::{Card, Cards},
     game::Game,
@@ -27,11 +25,11 @@ impl Player for RandomPlayer {
     }
 
     fn decide(&self, game: &Game) -> Card {
-        let mut rng = thread_rng();
         let my_cards = self.cards.into_array_13();
 
         loop {
-            let mut card = my_cards[rng.gen_range(0..my_cards.len())];
+            let mut card = my_cards[romu::mod_usize(my_cards.len())];
+
             card.set_player(self.index);
 
             if game.is_legal(card) {

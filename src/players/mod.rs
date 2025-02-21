@@ -27,6 +27,7 @@ pub trait Player {
     fn set_cards(&mut self, cards: Cards) {
         *self.cards_mut() = cards;
     }
+
     fn toggle_card(&mut self, index: u64) {
         let cards = self.cards_mut();
         *cards ^= 1 << index;

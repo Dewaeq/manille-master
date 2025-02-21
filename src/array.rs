@@ -24,6 +24,20 @@ impl<T: Copy + Default, const N: usize> Array<T, N> {
         self.index += 1;
     }
 
+    pub const fn remove(&mut self, pos: usize) {
+        assert!(pos < self.index && pos < N);
+        assert!(pos < N);
+        assert!(self.index > 0);
+
+        let mut i = pos + 1;
+        while i < self.index {
+            self.data[i - 1] = self.data[i];
+            i += 1;
+        }
+
+        self.index -= 1;
+    }
+
     pub const fn len(&self) -> usize {
         self.index
     }
