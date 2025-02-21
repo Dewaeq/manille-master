@@ -35,11 +35,15 @@ impl Player for GreedyPlayer {
             // otherwise, see if we can play above the current highest,
             // if not, we play our lowest card
             else if let Some(suite) = trick.suite() {
-                if let Some(highest) = self.cards.highest_of_suite(suite) {
-                    if highest.value() > trick.winner().unwrap().value() {
-                        highest
+                if self.cards & suite.mask() != 0 {
+                    if let Some(highest) = self.cards.highest_of_suite(suite) {
+                        if highest.value() > trick.winner().unwrap().value() {
+                            highest
+                        } else {
+                            self.cards.lowest_of_suite(suite).unwrap()
+                        }
                     } else {
-                        self.cards.lowest().unwrap()
+                        self.cards.lowest_of_suite(suite).unwrap()
                     }
                 } else {
                     self.cards.lowest().unwrap()

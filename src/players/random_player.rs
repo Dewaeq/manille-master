@@ -25,8 +25,13 @@ impl Player for RandomPlayer {
     }
 
     fn decide(&self, game: &Game) -> Card {
-        let mut card = self.cards.pick_random_card();
-        card.set_player(self.index);
-        card
+        loop {
+            let mut card = self.cards.pick_random_card();
+            card.set_player(self.index);
+
+            if game.is_legal(card) {
+                return card;
+            }
+        }
     }
 }
