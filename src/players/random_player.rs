@@ -1,4 +1,4 @@
-use rand::{seq::SliceRandom, thread_rng};
+use rand::{seq::SliceRandom, thread_rng, Rng};
 
 use crate::{
     card::{Card, Cards},
@@ -28,10 +28,10 @@ impl Player for RandomPlayer {
 
     fn decide(&self, game: &Game) -> Card {
         let mut rng = thread_rng();
-        let my_cards = self.cards.into_iter().collect::<Vec<_>>();
+        let my_cards = self.cards.into_array_13();
 
         loop {
-            let mut card = *my_cards.choose(&mut rng).unwrap();
+            let mut card = my_cards[rng.gen_range(0..my_cards.len())];
             card.set_player(self.index);
 
             if game.is_legal(card) {
