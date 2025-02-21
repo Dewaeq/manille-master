@@ -46,18 +46,10 @@ impl Suite {
     }
 }
 
-// bit layout:
-// bits 0..=3 are card value, ranging from 0..=12, with 0 being a two, 1 a three, ..., 12 an ace
-// bits 4..=6 are card suite, with Pijkens = 0, Klavers = 1, Koeken = 2, Harten = 3
-// bits 7..=9 are the index of the player that laid the card,
-//            value 5 means the player is unkown
-
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub struct Card {
-    //data: u16,
     value: u8,
     suite: Suite,
-    player: u8,
     index: u8,
 }
 
@@ -80,35 +72,19 @@ impl Card {
             value,
             index: index as _,
             suite,
-            player: 5,
         }
     }
 
     pub const fn get_index(&self) -> u64 {
-        //self.value() as u64 + (self.suite() as u64) * 13
         self.index as _
     }
 
     pub const fn value(&self) -> u16 {
-        //self.data & 0b1111
         self.value as _
     }
 
     pub const fn suite(&self) -> Suite {
         self.suite
-        //let suite = (self.data >> 4) & 0b111;
-        //unsafe { std::mem::transmute(suite as u8) }
-    }
-
-    pub const fn set_player(&mut self, player: usize) {
-        self.player = player as _;
-        //self.data &= 0b1111111;
-        //self.data |= (player as u16) << 7;
-    }
-
-    pub const fn player(&self) -> usize {
-        //(self.data >> 7) as usize
-        self.player as _
     }
 }
 
@@ -139,7 +115,7 @@ impl fmt::Display for Card {
 
 impl fmt::Debug for Card {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}, player: {}", self, self.player())
+        write!(f, "{}", self)
     }
 }
 
@@ -307,15 +283,6 @@ impl BitXor<Cards> for u64 {
     }
 }
 
-//impl IntoIterator for Cards {
-//type Item = Card;
-//type IntoIter = CardIterator;
-
-//fn into_iter(self) -> Self::IntoIter {
-//CardIterator(self.data, 5)
-//}
-//}
-
 pub struct CardIterator(u64);
 
 impl Iterator for CardIterator {
@@ -353,9 +320,5 @@ mod tests {
         assert!(Card::new(34).get_index() == 34);
         assert!(Card::new(4).get_index() == 4);
         assert!(Card::new(17).get_index() == 17);
-
-        let mut card = Card::new(26);
-        card.set_player(2);
-        assert!(card.player() == 2);
     }
 }

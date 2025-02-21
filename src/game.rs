@@ -21,7 +21,6 @@ impl Game {
             player.set_index(i);
         }
 
-        //game.dealer = game.rng.gen_range(0..=3);
         game.dealer = romu::mod_usize(4);
         game.players = players;
         game.deal_cards();
@@ -63,19 +62,19 @@ impl Game {
 
             self.players[player_idx].toggle_card(card_idx);
             self.played_cards |= 1 << card_idx;
-            self.trick.play(card);
+            self.trick.play(card, player_idx);
         }
 
-        let winner = self.trick.winner().unwrap();
+        let winner = self.trick.winning_player().unwrap();
 
-        self.score[winner.player()] += 1;
-        self.dealer = winner.player();
+        self.score[winner] += 1;
+        self.dealer = winner;
     }
 
     /// controleer of deze speler al dan niet kan volgen
-    pub fn is_legal(&self, card: Card) -> bool {
+    pub fn is_legal(&self, card: Card, player: usize) -> bool {
         if let Some(suite) = self.trick.suite() {
-            let player = &self.players[card.player()];
+            let player = &self.players[player];
 
             player.cards() & suite.mask() == 0 || card.suite() == suite
         } else {
