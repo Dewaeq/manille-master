@@ -13,8 +13,9 @@ pub const ALL: u64 = PIJKENS | KLAVERS | HARTEN | KOEKEN;
 pub const ACES: u64 = 1 << 12 | 1 << 25 | 1 << 38 | 1 << 51;
 pub const TWOS: u64 = ACES >> 12;
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub enum Suite {
+    #[default]
     Pijkens,
     Klavers,
     Harten,
@@ -50,39 +51,61 @@ impl Suite {
 
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub struct Card {
-    data: u16,
+    //data: u16,
+    value: u8,
+    suite: Suite,
+    player: u8,
+    index: u8,
 }
 
 impl Card {
     pub const fn new(index: u64) -> Self {
-        let value = (index % 13) as u16;
-        let suite = Suite::from_index(index);
+        Self::from_raw(index, None, None)
+    }
+
+    pub const fn from_raw(index: u64, value: Option<u8>, suite: Option<Suite>) -> Self {
+        let value = match value {
+            Some(v) => v,
+            None => (index % 13) as _,
+        };
+        let suite = match suite {
+            Some(s) => s,
+            None => Suite::from_index(index),
+        };
 
         Self {
-            data: value | ((suite as u16) << 4) | (5u16 << 7),
+            value,
+            index: index as _,
+            suite,
+            player: 5,
         }
     }
 
     pub const fn get_index(&self) -> u64 {
-        self.value() as u64 + (self.suite() as u64) * 13
+        //self.value() as u64 + (self.suite() as u64) * 13
+        self.index as _
     }
 
     pub const fn value(&self) -> u16 {
-        self.data & 0b1111
+        //self.data & 0b1111
+        self.value as _
     }
 
     pub const fn suite(&self) -> Suite {
-        let suite = (self.data >> 4) & 0b111;
-        unsafe { std::mem::transmute(suite as u8) }
+        self.suite
+        //let suite = (self.data >> 4) & 0b111;
+        //unsafe { std::mem::transmute(suite as u8) }
     }
 
     pub const fn set_player(&mut self, player: usize) {
-        self.data &= 0b1111111;
-        self.data |= (player as u16) << 7;
+        self.player = player as _;
+        //self.data &= 0b1111111;
+        //self.data |= (player as u16) << 7;
     }
 
     pub const fn player(&self) -> usize {
-        (self.data >> 7) as usize
+        //(self.data >> 7) as usize
+        self.player as _
     }
 }
 
@@ -140,7 +163,7 @@ impl Cards {
         let masked = self.data & suite.mask();
 
         if masked != 0 {
-            Some(Card::new(msb(masked)))
+            Some(Card::from_raw(msb(masked), None, Some(suite)))
         } else {
             None
         }
@@ -151,7 +174,7 @@ impl Cards {
         while i <= 12 {
             let masked = self.data & (ACES >> i);
             if masked != 0 {
-                return Some(Card::new(lsb(masked)));
+                return Some(Card::from_raw(lsb(masked), Some(i), None));
             }
             i += 1;
         }
@@ -163,7 +186,7 @@ impl Cards {
         let masked = self.data & suite.mask();
 
         if masked != 0 {
-            Some(Card::new(lsb(masked)))
+            Some(Card::from_raw(lsb(masked), None, Some(suite)))
         } else {
             None
         }
@@ -174,7 +197,7 @@ impl Cards {
         while i <= 12 {
             let masked = self.data & (TWOS << i);
             if masked != 0 {
-                return Some(Card::new(lsb(masked)));
+                return Some(Card::from_raw(lsb(masked), Some(i), None));
             }
             i += 1;
         }
