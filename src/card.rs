@@ -1,5 +1,8 @@
 use core::fmt;
-use std::ops::{BitAnd, BitOr, BitOrAssign, BitXor, BitXorAssign};
+use std::{
+    fmt::Debug,
+    ops::{BitAnd, BitOr, BitOrAssign, BitXor, BitXorAssign},
+};
 
 use crate::{
     array::Array,
@@ -201,7 +204,7 @@ impl Cards {
         None
     }
 
-    pub const fn has(&self, suite: Suite) -> bool {
+    pub const fn has_suite(&self, suite: Suite) -> bool {
         self.data & suite.mask() != 0
     }
 

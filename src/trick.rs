@@ -44,7 +44,7 @@ impl Trick {
         self.winner.map(|(_, player)| player)
     }
 
-    pub fn suite(&self) -> Option<Suite> {
+    pub const fn suite(&self) -> Option<Suite> {
         self.suite
     }
 }

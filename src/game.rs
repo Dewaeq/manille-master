@@ -76,7 +76,7 @@ impl Game {
         if let Some(suite) = self.trick.suite() {
             let player = &self.players[player];
 
-            player.cards() & suite.mask() == 0 || card.suite() == suite
+            !player.cards().has_suite(suite) || card.suite() == suite
         } else {
             true
         }
