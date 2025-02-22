@@ -9,6 +9,8 @@ mod players;
 mod trick;
 
 fn main() {
+    romu::seed();
+
     let args: Vec<String> = std::env::args().collect();
 
     if args.contains(&"bench".to_owned()) {
