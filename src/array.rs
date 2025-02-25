@@ -17,6 +17,14 @@ impl<T: Copy + Default, const N: usize> Array<T, N> {
         self.index = 0;
     }
 
+    pub const fn get(&self, index: usize) -> Option<T> {
+        if index >= self.index {
+            None
+        } else {
+            Some(self.data[index])
+        }
+    }
+
     pub const fn push(&mut self, value: T) {
         assert!(self.index < N);
 

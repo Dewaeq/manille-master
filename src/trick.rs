@@ -1,39 +1,56 @@
-use crate::{
-    array::Array,
-    card::{Card, Suite},
-};
+use crate::{array::Array, card::Card, suite::Suite};
 
 #[derive(Default)]
 pub struct Trick {
     cards: Array<Card, 4>,
-    suite: Option<Suite>,
+    trump: Option<Suite>,
     winner: Option<(Card, usize)>,
+    score: i32,
 }
 
 impl Trick {
-    pub fn clear(&mut self) {
+    pub const fn clear(&mut self) {
         self.cards.clear();
-        self.suite = None;
+        self.trump = None;
         self.winner = None;
+        self.score = 0;
+    }
+
+    pub const fn set_trump(&mut self, trump: Option<Suite>) {
+        self.trump = trump;
     }
 
     pub fn play(&mut self, card: Card, player: usize) {
-        if self.suite.is_none() {
-            self.suite = Some(card.suite());
-            self.winner = Some((card, player));
-        } else {
-            let trick_suite = self.suite.unwrap();
-            let suite = card.suite();
-            let (winner_card, _) = self.winner.unwrap();
+        match self.winner {
+            // this is the first card of this trick
+            None => self.winner = Some((card, player)),
+            Some((winner_card, _)) => match self.trump {
+                // playing with trump
+                Some(trump) => {
+                    let winner_suite = winner_card.suite();
+                    let card_suite = card.suite();
 
-            if suite == trick_suite && winner_card.suite() != trick_suite
-                || card.value() > winner_card.value() && (suite == winner_card.suite())
-            {
-                self.winner = Some((card, player));
-            }
+                    if (card_suite == trump && winner_suite != trump)
+                        || (card.value() > winner_card.value() && card_suite == winner_suite)
+                    {
+                        self.winner = Some((card, player));
+                    }
+                }
+                // playing without trump
+                None => {
+                    if card.suite() == winner_card.suite() && card.value() > winner_card.value() {
+                        self.winner = Some((card, player));
+                    }
+                }
+            },
         }
 
+        self.score += card.score();
         self.cards.push(card);
+    }
+
+    pub fn winner(&self) -> Option<(Card, usize)> {
+        self.winner
     }
 
     pub fn winning_card(&self) -> Option<Card> {
@@ -44,7 +61,19 @@ impl Trick {
         self.winner.map(|(_, player)| player)
     }
 
-    pub const fn suite(&self) -> Option<Suite> {
-        self.suite
+    pub fn is_team_winning(&self, player: usize) -> bool {
+        todo!()
+    }
+
+    pub fn score(&self) -> i32 {
+        self.score
+    }
+
+    pub fn suite_to_follow(&self) -> Option<Suite> {
+        self.cards.get(0).map(|c| c.suite())
+    }
+
+    pub const fn trump(&self) -> Option<Suite> {
+        self.trump
     }
 }

@@ -1,11 +1,14 @@
 use bench::bench;
 
+mod action;
 mod array;
 mod bench;
 mod bits;
 mod card;
 mod game;
 mod players;
+mod stack;
+mod suite;
 mod trick;
 
 fn main() {

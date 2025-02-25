@@ -25,8 +25,8 @@ fn run_bench<T: Player + Default + 'static>(size: usize, name: &str) {
     let start = Instant::now();
 
     for game in &mut games {
-        for _ in 0..13 {
-            game.play_trick();
+        while !game.is_terminal() {
+            game.play_round();
         }
     }
 

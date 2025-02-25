@@ -1,12 +1,9 @@
 use super::Player;
-use crate::{
-    card::{Card, Cards},
-    game::Game,
-};
+use crate::{card::Card, game::Game, stack::Stack, suite::Suite};
 
 #[derive(Default)]
 pub struct GreedyPlayer {
-    cards: Cards,
+    cards: Stack,
     index: usize,
 }
 
@@ -15,11 +12,11 @@ impl Player for GreedyPlayer {
         self.index = index;
     }
 
-    fn cards(&self) -> Cards {
+    fn cards(&self) -> Stack {
         self.cards
     }
 
-    fn cards_mut(&mut self) -> &mut Cards {
+    fn cards_mut(&mut self) -> &mut Stack {
         &mut self.cards
     }
 
@@ -35,9 +32,9 @@ impl Player for GreedyPlayer {
             Some(winning_card) => {
                 // a card has already been played, so we're sure that
                 // suite has been initialised
-                let suite = trick.suite().unwrap();
+                let suite = trick.suite_to_follow().unwrap();
 
-                if self.cards & suite.mask() != 0 {
+                if self.cards.has_suite(suite) {
                     if let Some(highest) = self.cards.highest_of_suite(suite) {
                         if highest.value() > winning_card.value() {
                             return highest;
@@ -50,5 +47,9 @@ impl Player for GreedyPlayer {
         }
 
         self.cards.lowest().unwrap()
+    }
+
+    fn pick_trump(&self, _game: &Game) -> Suite {
+        todo!()
     }
 }

@@ -1,16 +1,18 @@
-use crate::{
-    card::{Card, Cards, ALL},
-    players::PlayerVec,
-    trick::Trick,
-};
+use crate::{card::Card, players::PlayerVec, stack::Stack, trick::Trick};
+
+pub enum GameState {
+    PickingTrick,
+    GameOver,
+}
 
 #[derive(Default)]
 pub struct Game {
-    pub played_cards: Cards,
+    pub played_cards: Stack,
     pub trick: Trick,
     pub players: PlayerVec,
     pub dealer: usize,
-    pub score: [i32; 4],
+    pub turn: usize,
+    pub score: [i32; 2],
 }
 
 impl Game {
@@ -21,44 +23,53 @@ impl Game {
             player.set_index(i);
         }
 
-        game.dealer = romu::mod_usize(4);
         game.players = players;
-        game.deal_cards();
+        game.pick_random_dealer();
+        game.deal_cards(Stack::ALL);
 
         game
     }
 
-    pub fn next_dealer(&mut self) -> usize {
-        self.dealer = (self.dealer + 1) % 4;
-        self.dealer
+    pub fn pick_random_dealer(&mut self) {
+        self.dealer = romu::mod_usize(4);
+        self.turn = (self.dealer + 1) % 4;
     }
 
-    pub fn deal_cards(&mut self) {
-        let mut indices: [u64; 52] = std::array::from_fn(|i| i as u64);
+    pub fn next_dealer(&mut self) {
+        self.dealer = (self.dealer + 1) % 4;
+    }
+
+    /// evenly divide the given stack over all players
+    pub fn deal_cards(&mut self, stack: Stack) {
+        let mut indices = (0..32).filter(|&x| stack.has_index(x)).collect::<Vec<_>>();
         let mut cards = [0; 3];
 
-        for i in (0..39).rev() {
+        // number of cards per player
+        let n = indices.len() / 4;
+
+        for i in (0..3 * n).rev() {
             let j = romu::mod_usize(i + 1);
             indices.swap(i, j);
 
-            cards[i / 13] |= 1 << indices[i];
+            cards[i / n] |= 1 << indices[i];
         }
 
         self.players[0].cards_mut().set_data(cards[0]);
         self.players[1].cards_mut().set_data(cards[1]);
         self.players[2].cards_mut().set_data(cards[2]);
-        self.players[3]
-            .cards_mut()
-            .set_data(ALL ^ cards[0] ^ cards[1] ^ cards[2]);
+        self.players[3].set_cards(stack ^ cards[0] ^ cards[1] ^ cards[2]);
     }
 
-    pub fn play_trick(&mut self) {
+    /// returns the winning team and the score of all cards in this trick
+    pub fn play_trick(&mut self) -> (usize, i32) {
         self.trick.clear();
 
-        for i in self.dealer..(self.dealer + 4) {
+        for i in self.turn..(self.turn + 4) {
             let player_idx = i % 4;
             let card = self.players[player_idx].decide(self);
             let card_idx = card.get_index();
+
+            assert!(self.is_legal(card, player_idx));
 
             self.players[player_idx].toggle_card(card_idx);
             self.played_cards |= 1 << card_idx;
@@ -66,14 +77,37 @@ impl Game {
         }
 
         let winner = self.trick.winning_player().unwrap();
+        // the winner of a trick get's to play first in the next trick
+        self.turn = winner;
+        let winning_team = winner % 2;
 
-        self.score[winner] += 1;
-        self.dealer = winner;
+        (winning_team, self.trick.score())
+    }
+
+    /// play an entire round, i.e. 8 tricks
+    /// this method also assigns the next dealer
+    pub fn play_round(&mut self) {
+        let trump = self.players[self.dealer].pick_trump(self);
+        self.trick.set_trump(Some(trump));
+
+        let mut scores = [0; 2];
+
+        for _ in 0..8 {
+            let (winning_team, score) = self.play_trick();
+            scores[winning_team] += score;
+        }
+
+        assert!(scores.iter().sum::<i32>() == 60);
+
+        let (winning_team, &score) = scores.iter().enumerate().max_by_key(|(_, &y)| y).unwrap();
+        self.score[winning_team] += 30 - score;
+
+        self.next_dealer();
     }
 
     /// controleer of deze speler al dan niet kan volgen
     pub fn is_legal(&self, card: Card, player: usize) -> bool {
-        if let Some(suite) = self.trick.suite() {
+        if let Some(suite) = self.trick.suite_to_follow() {
             let player = &self.players[player];
 
             !player.cards().has_suite(suite) || card.suite() == suite
@@ -81,14 +115,18 @@ impl Game {
             true
         }
     }
+
+    pub fn is_terminal(&self) -> bool {
+        self.score.iter().any(|&s| s >= 101)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::Game;
     use crate::{
-        card::{Cards, ALL},
         players::{random_player::RandomPlayer, Player, PlayerVec},
+        stack::Stack,
     };
 
     #[test]
@@ -101,15 +139,28 @@ mod tests {
         ];
 
         let game = Game::new(players);
-        let mut all_cards = Cards::default();
+        let mut seen_cards = Stack::default();
 
         for player in &game.players {
             let cards = player.cards();
-            all_cards |= cards;
+            seen_cards |= cards;
 
-            assert!(cards.len() == 52 / (game.players.len() as u32));
+            assert!(cards.len() == 32 / (game.players.len() as u32));
         }
 
-        assert!(all_cards == ALL);
+        assert!(seen_cards == Stack::ALL);
+    }
+
+    #[test]
+    fn test_random_game() {
+        let players: PlayerVec = vec![
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+        ];
+
+        let mut game = Game::new(players);
+        game.play_round();
     }
 }
