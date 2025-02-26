@@ -61,10 +61,6 @@ impl Trick {
         self.winner.map(|(_, player)| player)
     }
 
-    pub fn is_team_winning(&self, player: usize) -> bool {
-        todo!()
-    }
-
     pub fn score(&self) -> i32 {
         self.score
     }

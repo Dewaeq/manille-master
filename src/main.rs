@@ -1,4 +1,8 @@
+use std::io::stdin;
+
 use bench::bench;
+use game::Game;
+use players::{random_player::RandomPlayer, Player, PlayerVec};
 
 mod action;
 mod array;
@@ -19,5 +23,26 @@ fn main() {
     if args.contains(&"bench".to_owned()) {
         let size = args.last().and_then(|x| x.parse::<usize>().ok());
         bench(size);
+    }
+
+    if args.contains(&"d".to_owned()) {
+        let players: PlayerVec = vec![
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+        ];
+        let mut game = Game::new(players);
+        while !game.is_terminal() {
+            let mut buf = String::new();
+            stdin().read_line(&mut buf).unwrap();
+            println!("{buf}");
+
+            match buf.trim() {
+                "r" => game.play_round(),
+                "p" => println!("{game:?}"),
+                _ => (),
+            }
+        }
     }
 }

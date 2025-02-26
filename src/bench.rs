@@ -3,13 +3,16 @@ use std::time::Instant;
 use crate::{
     game::Game,
     players::{greedy_player::GreedyPlayer, random_player::RandomPlayer, Player, PlayerVec},
+    stack::Stack,
 };
 
+const BENCH_SIZE: usize = 800_000;
+
 pub fn bench(size: Option<usize>) {
-    let size = size.unwrap_or(800_000);
+    let size = size.unwrap_or(BENCH_SIZE);
 
     run_bench::<RandomPlayer>(size, "random");
-    run_bench::<GreedyPlayer>(size, "greedy");
+    //run_bench::<GreedyPlayer>(size, "greedy");
 }
 
 fn run_bench<T: Player + Default + 'static>(size: usize, name: &str) {
@@ -25,8 +28,12 @@ fn run_bench<T: Player + Default + 'static>(size: usize, name: &str) {
     let start = Instant::now();
 
     for game in &mut games {
-        while !game.is_terminal() {
+        loop {
             game.play_round();
+            if game.is_terminal() {
+                break;
+            }
+            game.deal_cards();
         }
     }
 
@@ -36,11 +43,9 @@ fn run_bench<T: Player + Default + 'static>(size: usize, name: &str) {
         (size as f64) / start.elapsed().as_secs_f64()
     );
 
-    let mut score = [0; 4];
+    let mut score = [0; 2];
     for game in &mut games {
-        for (i, s) in game.score.iter().enumerate() {
-            score[i] += *s;
-        }
+        score[game.winner()] += 1;
     }
 
     println!("{name}:\t{score:?}");

@@ -143,8 +143,20 @@ impl Stack {
         None
     }
 
+    pub fn all_below(card: Card) -> Stack {
+        Self::BELOW[card.value() as usize]
+    }
+
+    pub fn all_above(card: Card) -> Stack {
+        !Self::all_below(card)
+    }
+
     pub const fn has_suite(&self, suite: Suite) -> bool {
         self.data & suite.mask() != 0
+    }
+
+    pub const fn has_card(&self, card: Card) -> bool {
+        self.has_index(card.get_index())
     }
 
     pub const fn has_index(&self, index: u32) -> bool {
@@ -217,6 +229,17 @@ impl BitOr for Stack {
         }
     }
 }
+
+impl BitOr<u32> for Stack {
+    type Output = Self;
+
+    fn bitor(self, rhs: u32) -> Self::Output {
+        Stack {
+            data: self.data | rhs,
+        }
+    }
+}
+
 impl BitOrAssign for Stack {
     fn bitor_assign(&mut self, rhs: Self) {
         self.data |= rhs.data;
