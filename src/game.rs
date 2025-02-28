@@ -1,14 +1,16 @@
 use std::fmt::Debug;
 
 use crate::{
-    action::Action, action_list::ActionList, game_state::GameState, mcts::state::State,
+    action::Action,
+    game_state::GameState,
+    mcts::{action_list::ActionList, state::State},
     players::PlayerVec,
 };
 
 #[derive(Default)]
 pub struct Game {
     pub players: PlayerVec,
-    pub state: GameState,
+    state: GameState,
 }
 
 impl Game {
@@ -38,7 +40,9 @@ impl Game {
     pub fn play_trick(&mut self) {
         for i in self.state.turn()..(self.state.turn() + 4) {
             let player_idx = i % 4;
-            let action = self.players[player_idx].decide(self);
+            let action = self.players[player_idx].decide(self.state.clone());
+
+            println!("player {player_idx} plays {action:?}");
 
             match action {
                 Action::PlayCard(card) => {
@@ -55,10 +59,14 @@ impl Game {
     /// play an entire round, i.e. 8 tricks
     /// this method also assigns the next dealer
     pub fn play_round(&mut self) {
-        let trump = self.players[self.state.dealer()].pick_trump(self);
-        self.state.apply_action(Action::PickTrump(trump));
+        let action = self.players[self.state.dealer()].decide(self.state.clone());
+        println!("{} plays {action:?}", self.state.dealer());
+        self.state.apply_action(action);
+        //let trump = self.players[self.state.dealer()].pick_trump(self.state.clone());
+        //self.state.apply_action(Action::PickTrump(trump));
 
         for _ in 0..8 {
+            println!("{:?}", self.state);
             self.play_trick();
         }
     }
@@ -123,6 +131,10 @@ impl Game {
 
     pub fn winner(&self) -> usize {
         self.state.winner()
+    }
+
+    pub fn state_ref(&self) -> &GameState {
+        &self.state
     }
 }
 

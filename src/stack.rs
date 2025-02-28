@@ -3,7 +3,7 @@ use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, N
 
 use crate::{
     array::Array,
-    bits::{lsb, msb, pop_lsb, select_random_set_bit},
+    bits::{lsb, msb, pop_lsb, pop_random_set_bit, select_random_set_bit},
     card::Card,
     suite::Suite,
 };
@@ -91,6 +91,15 @@ impl Stack {
     pub fn pick_random_card(&self) -> Card {
         let index = select_random_set_bit(self.data);
         Card::new(index)
+    }
+
+    pub fn pop_random_card(&mut self) -> Option<Card> {
+        if self.data == 0 {
+            None
+        } else {
+            let index = pop_random_set_bit(&mut self.data);
+            Some(Card::new(index))
+        }
     }
 
     pub fn pick_random_suite(&self) -> Suite {

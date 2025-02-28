@@ -1,5 +1,5 @@
 use super::Player;
-use crate::{action::Action, game::Game, stack::Stack, suite::Suite};
+use crate::{action::Action, game_state::GameState, stack::Stack, suite::Suite};
 
 #[derive(Default)]
 pub struct GreedyPlayer {
@@ -20,7 +20,7 @@ impl Player for GreedyPlayer {
         &mut self.cards
     }
 
-    fn decide(&self, game: &Game) -> Action {
+    fn decide(&mut self, state: GameState) -> Action {
         todo!()
 
         //let trick = &game.trick;
@@ -51,7 +51,7 @@ impl Player for GreedyPlayer {
         //self.cards.lowest().unwrap()
     }
 
-    fn pick_trump(&self, _game: &Game) -> Option<Suite> {
-        todo!()
-    }
+    //fn pick_trump(&self, _state: GameState) -> Option<Suite> {
+    //    todo!()
+    //}
 }

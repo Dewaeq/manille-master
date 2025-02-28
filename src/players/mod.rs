@@ -1,4 +1,4 @@
-use crate::{action::Action, game::Game, stack::Stack, suite::Suite};
+use crate::{action::Action, game_state::GameState, stack::Stack, suite::Suite};
 
 pub mod greedy_player;
 pub mod mcts_player;
@@ -20,9 +20,9 @@ pub trait Player {
 
     fn cards_mut(&mut self) -> &mut Stack;
 
-    fn decide(&self, game: &Game) -> Action;
+    fn decide(&mut self, state: GameState) -> Action;
 
-    fn pick_trump(&self, game: &Game) -> Option<Suite>;
+    //fn pick_trump(&self, staate: GameState) -> Option<Suite>;
 
     fn set_cards(&mut self, cards: Stack) {
         *self.cards_mut() = cards;

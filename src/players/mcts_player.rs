@@ -1,14 +1,11 @@
-use crate::{
-    action::Action, card::Card, game::Game, game_state::GameState, mcts::tree::Tree, stack::Stack,
-    suite::Suite,
-};
+use crate::{action::Action, game_state::GameState, mcts::searcher::Searcher, stack::Stack};
 
 use super::Player;
 
 pub struct MctsPlayer {
     cards: Stack,
     index: usize,
-    tree: Tree<GameState>,
+    searcher: Searcher,
 }
 
 impl Player for MctsPlayer {
@@ -24,13 +21,21 @@ impl Player for MctsPlayer {
         &mut self.cards
     }
 
-    fn decide(&self, game: &Game) -> Action {
-        todo!()
+    fn decide(&mut self, state: GameState) -> Action {
+        self.searcher.search(&state, self.index, 5000)
     }
 
-    fn pick_trump(&self, game: &Game) -> Option<Suite> {
-        todo!()
-    }
+    //fn pick_trump(&self, state: GameState) -> Option<Suite> {
+    //    todo!()
+    //}
 }
 
-impl MctsPlayer {}
+impl Default for MctsPlayer {
+    fn default() -> Self {
+        MctsPlayer {
+            cards: Stack::default(),
+            index: 0,
+            searcher: Searcher::new(),
+        }
+    }
+}

@@ -33,7 +33,7 @@ fn run_bench<T: Player + Default + 'static>(size: usize, name: &str) {
             if game.is_terminal() {
                 break;
             }
-            game.deal_cards();
+            //game.deal_cards();
         }
     }
 

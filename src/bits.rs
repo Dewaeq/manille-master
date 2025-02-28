@@ -16,6 +16,13 @@ pub const fn pop_lsb(data: &mut u32) -> u32 {
     lsb
 }
 
+pub fn pop_random_set_bit(data: &mut u32) -> u32 {
+    let bit = select_random_set_bit(*data);
+    *data ^= 1 << bit;
+
+    bit
+}
+
 #[cfg(not(feature = "bmi2"))]
 pub fn select_random_set_bit(mut data: u32) -> u32 {
     let bit = romu::mod_u32(data.count_ones());

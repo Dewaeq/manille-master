@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use crate::{array::Array, card::Card, suite::Suite};
 
 #[derive(Default, Clone)]
@@ -10,9 +12,10 @@ pub struct Trick {
 }
 
 impl Trick {
+    /// clear all properties except trump
     pub const fn clear(&mut self) {
         self.cards.clear();
-        self.trump = None;
+        //self.trump = None;
         self.winner = None;
         self.score = 0;
     }
@@ -76,5 +79,15 @@ impl Trick {
 
     pub const fn is_finished(&self) -> bool {
         self.cards.len() == 4
+    }
+}
+
+impl Debug for Trick {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Trick")
+            .field("trump", &self.trump)
+            .field("winner", &self.winner)
+            .field("score", &self.score)
+            .finish()
     }
 }

@@ -2,10 +2,10 @@ use std::io::stdin;
 
 use bench::bench;
 use game::Game;
-use players::{random_player::RandomPlayer, Player, PlayerVec};
+use players::{mcts_player::MctsPlayer, random_player::RandomPlayer, Player, PlayerVec};
 
 mod action;
-mod action_list;
+mod action_collection;
 mod array;
 mod bench;
 mod bits;
@@ -23,6 +23,19 @@ fn main() {
     romu::seed();
 
     let args: Vec<String> = std::env::args().collect();
+
+    if args.contains(&"p".to_owned()) {
+        let players: PlayerVec = vec![
+            MctsPlayer::boxed(),
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+        ];
+        let mut game = Game::new(players);
+        //while !game.is_terminal() {
+        game.play_round();
+        //}
+    }
 
     if args.contains(&"bench".to_owned()) {
         let size = args.last().and_then(|x| x.parse::<usize>().ok());

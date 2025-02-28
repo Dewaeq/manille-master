@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 
 use crate::{
-    action::Action, card::Card, game_phase::GamePhase, mcts::state::State, stack::Stack,
-    suite::Suite, trick::Trick,
+    action::Action, action_collection::ActionCollection, card::Card, game_phase::GamePhase,
+    mcts::state::State, stack::Stack, suite::Suite, trick::Trick,
 };
 
 #[derive(Clone, Default)]
@@ -40,7 +40,9 @@ impl GameState {
     }
 
     pub fn set_random_dealer(&mut self) {
-        self.dealer = romu::mod_usize(4);
+        // TODO: replace
+        //self.dealer = romu::mod_usize(4);
+        self.dealer = 0;
         self.turn = (self.dealer + 1) % 4;
     }
 
@@ -99,6 +101,7 @@ impl GameState {
             self.phase = GamePhase::Finished { winning_team: 1 };
         } else {
             self.set_next_dealer();
+            self.deal_cards();
         }
     }
 
@@ -123,16 +126,16 @@ impl GameState {
 
     /// TODO: add option to play without trump
     fn possible_trump_actions(&self) -> <Self as State>::ActionList {
-        let cards = self.player_cards[self.turn];
-        let mut actions = Vec::with_capacity(4);
+        let cards = self.player_cards[self.dealer];
+        let mut bits = 0;
 
         for suite in [Suite::Pijkens, Suite::Klavers, Suite::Harten, Suite::Koeken] {
             if cards.has_suite(suite) {
-                actions.push(Action::PickTrump(Some(suite)));
+                bits |= 1 << suite as u8;
             }
         }
 
-        actions
+        ActionCollection::Trumps(bits)
     }
 
     fn possible_card_actions(&self) -> <Self as State>::ActionList {
@@ -180,40 +183,76 @@ impl GameState {
             }
         }
 
-        cards.into_iter().map(Action::PlayCard).collect()
+        ActionCollection::Cards(cards)
     }
 }
 
 impl State for GameState {
     type Action = Action;
-    type ActionList = Vec<Self::Action>;
+    type ActionList = ActionCollection;
 
     fn randomize(&self, observer: usize) -> Self {
+        //println!("original state:");
+        //dbg!(&self);
+
         let mut state = self.clone();
         let cards_to_deal = Stack::ALL ^ self.player_cards[observer] ^ self.played_cards;
         let mut indices = (0..32)
             .filter(|&x| cards_to_deal.has_index(x))
             .collect::<Vec<_>>();
-        let mut cards = [Stack::default(); 2];
 
-        // number of cards per player
-        let n = indices.len() / 4;
+        romu::shuffle(&mut indices);
+        let mut start = 0;
 
-        for i in (2 * n..4 * n).rev() {
-            let j = romu::mod_usize(i + 1);
-            indices.swap(i, j);
-
-            cards[(i / n) - 2] |= 1 << indices[i];
+        for i in 1..=3 {
+            let n = self.player_cards[(observer + i) % 4].len() as usize;
+            state.player_cards[(observer + i) % 4] =
+                Stack::from_slice(&indices[start..(start + n)]);
+            start += n;
         }
 
-        state.player_cards[(observer + 1) % 4] = cards[0];
-        state.player_cards[(observer + 2) % 4] = cards[1];
-        state.player_cards[(observer + 3) % 4] =
-            Stack::ALL ^ cards[0] ^ cards[1] ^ self.player_cards[observer];
+        // TODO: remove
+        for i in 0..4 {
+            assert_eq!(self.player_cards[i].len(), state.player_cards[i].len());
+            if i != observer {
+                //assert_ne!(self.player_cards[i], state.player_cards[i]);
+            } else {
+                assert_eq!(self.player_cards[i], state.player_cards[i]);
+            }
+        }
+
+        //let mut cards = [Stack::default(); 2];
+        // number of cards per player
+        //let n = indices.len() / 4;
+        //
+        //for i in (2 * n..4 * n).rev() {
+        //    let j = romu::mod_usize(i + 1);
+        //    indices.swap(i, j);
+        //
+        //    cards[(i / n) - 2] |= 1 << indices[i];
+        //}
+
+        //state.player_cards[(observer + 1) % 4] = cards[0];
+        //state.player_cards[(observer + 2) % 4] = cards[1];
+        //state.player_cards[(observer + 3) % 4] = cards_to_deal ^ cards[0] ^ cards[1];
+
+        //dbg!(observer);
+        //dbg!(&state);
 
         state
     }
 
+    /// TODO: find a better way to do this, cus this sucks
+    fn empty_action_list(&self) -> Self::ActionList {
+        match self.phase {
+            GamePhase::PickingTrump => ActionCollection::Trumps(0),
+            GamePhase::PlayingRound => ActionCollection::Cards(Stack::default()),
+            _ => ActionCollection::Trumps(0),
+        }
+    }
+
+    /// return possible cards to play by [turn],
+    /// or possible trumps to pick by [dealer]
     fn possible_actions(&self) -> Self::ActionList {
         match self.phase {
             GamePhase::PickingTrump => self.possible_trump_actions(),
@@ -232,6 +271,19 @@ impl State for GameState {
     fn is_terminal(&self) -> bool {
         matches!(self.phase, GamePhase::Finished { .. })
     }
+
+    fn reward(&self, perspective: usize) -> f32 {
+        match self.phase {
+            GamePhase::Finished { winning_team } => {
+                if perspective % 2 == winning_team {
+                    1.
+                } else {
+                    0.
+                }
+            }
+            _ => unreachable!(),
+        }
+    }
 }
 
 impl Debug for GameState {
@@ -243,9 +295,9 @@ impl Debug for GameState {
         f.debug_struct("GameState")
             .field("turn", &self.turn)
             .field("dealer", &self.dealer)
-            .field("player_cards", &self.player_cards)
+            //.field("player_cards", &self.player_cards)
             .field("played_cards", &self.played_cards)
-            //.field("trick", &self.trick)
+            .field("trick", &self.trick)
             .field("score", &self.score)
             .field("trick_score", &self.trick_score)
             .field("phase", &self.phase)
