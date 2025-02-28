@@ -1,4 +1,4 @@
-use crate::{card::Card, game::Game, stack::Stack, suite::Suite};
+use crate::{action::Action, card::Card, game::Game, stack::Stack, suite::Suite};
 
 use super::Player;
 
@@ -21,9 +21,10 @@ impl Player for RandomPlayer {
         &mut self.cards
     }
 
-    fn decide(&self, game: &Game) -> Card {
-        let cards = game.legal_actions(self.index);
-        cards.pick_random_card()
+    fn decide(&self, game: &Game) -> Action {
+        let actions = game.legal_actions();
+        actions[romu::mod_usize(actions.len())]
+
         //let mut cards = self.cards;
         //
         //// have to follow if possible,
@@ -77,7 +78,7 @@ impl Player for RandomPlayer {
         //}
     }
 
-    fn pick_trump(&self, _game: &Game) -> Suite {
-        self.cards.pick_random_suite()
+    fn pick_trump(&self, _game: &Game) -> Option<Suite> {
+        Some(self.cards.pick_random_suite())
     }
 }

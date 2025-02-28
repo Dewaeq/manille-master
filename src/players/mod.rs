@@ -1,6 +1,7 @@
-use crate::{card::Card, game::Game, stack::Stack, suite::Suite};
+use crate::{action::Action, game::Game, stack::Stack, suite::Suite};
 
 pub mod greedy_player;
+pub mod mcts_player;
 pub mod random_player;
 
 pub type PlayerVec = Vec<Box<dyn Player>>;
@@ -19,9 +20,9 @@ pub trait Player {
 
     fn cards_mut(&mut self) -> &mut Stack;
 
-    fn decide(&self, game: &Game) -> Card;
+    fn decide(&self, game: &Game) -> Action;
 
-    fn pick_trump(&self, game: &Game) -> Suite;
+    fn pick_trump(&self, game: &Game) -> Option<Suite>;
 
     fn set_cards(&mut self, cards: Stack) {
         *self.cards_mut() = cards;

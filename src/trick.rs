@@ -1,7 +1,8 @@
 use crate::{array::Array, card::Card, suite::Suite};
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Trick {
+    /// TODO: might be able to remove this field
     cards: Array<Card, 4>,
     trump: Option<Suite>,
     winner: Option<(Card, usize)>,
@@ -71,5 +72,9 @@ impl Trick {
 
     pub const fn trump(&self) -> Option<Suite> {
         self.trump
+    }
+
+    pub const fn is_finished(&self) -> bool {
+        self.cards.len() == 4
     }
 }

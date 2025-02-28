@@ -1,3 +1,4 @@
+#[cfg(feature = "bmi2")]
 use std::arch::x86_64::_pdep_u32;
 
 pub const fn lsb(data: u32) -> u32 {

@@ -1,5 +1,6 @@
 use std::ops::Index;
 
+#[derive(Clone)]
 pub struct Array<T: Copy + Default, const N: usize> {
     data: [T; N],
     index: usize,

@@ -5,11 +5,15 @@ use game::Game;
 use players::{random_player::RandomPlayer, Player, PlayerVec};
 
 mod action;
+mod action_list;
 mod array;
 mod bench;
 mod bits;
 mod card;
 mod game;
+mod game_phase;
+mod game_state;
+mod mcts;
 mod players;
 mod stack;
 mod suite;

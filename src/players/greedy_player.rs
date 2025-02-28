@@ -1,5 +1,5 @@
 use super::Player;
-use crate::{card::Card, game::Game, stack::Stack, suite::Suite};
+use crate::{action::Action, game::Game, stack::Stack, suite::Suite};
 
 #[derive(Default)]
 pub struct GreedyPlayer {
@@ -20,36 +20,38 @@ impl Player for GreedyPlayer {
         &mut self.cards
     }
 
-    fn decide(&self, game: &Game) -> Card {
-        let trick = &game.trick;
+    fn decide(&self, game: &Game) -> Action {
+        todo!()
 
-        match trick.winning_card() {
-            // if we're the first to play, play our highest card
-            None => return self.cards.highest().unwrap(),
-            // otherwise, see if we can play above the current highest,
-            // if not, we play our lowest card, while following the suite
-            // if possible
-            Some(winning_card) => {
-                // a card has already been played, so we're sure that
-                // suite has been initialised
-                let suite = trick.suite_to_follow().unwrap();
-
-                if self.cards.has_suite(suite) {
-                    if let Some(highest) = self.cards.highest_of_suite(suite) {
-                        if highest.value() > winning_card.value() {
-                            return highest;
-                        }
-                    }
-
-                    return self.cards.lowest_of_suite(suite).unwrap();
-                }
-            }
-        }
-
-        self.cards.lowest().unwrap()
+        //let trick = &game.trick;
+        //
+        //match trick.winning_card() {
+        //    // if we're the first to play, play our highest card
+        //    None => return self.cards.highest().unwrap(),
+        //    // otherwise, see if we can play above the current highest,
+        //    // if not, we play our lowest card, while following the suite
+        //    // if possible
+        //    Some(winning_card) => {
+        //        // a card has already been played, so we're sure that
+        //        // suite has been initialised
+        //        let suite = trick.suite_to_follow().unwrap();
+        //
+        //        if self.cards.has_suite(suite) {
+        //            if let Some(highest) = self.cards.highest_of_suite(suite) {
+        //                if highest.value() > winning_card.value() {
+        //                    return highest;
+        //                }
+        //            }
+        //
+        //            return self.cards.lowest_of_suite(suite).unwrap();
+        //        }
+        //    }
+        //}
+        //
+        //self.cards.lowest().unwrap()
     }
 
-    fn pick_trump(&self, _game: &Game) -> Suite {
+    fn pick_trump(&self, _game: &Game) -> Option<Suite> {
         todo!()
     }
 }
