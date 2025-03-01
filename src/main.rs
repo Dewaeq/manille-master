@@ -2,6 +2,8 @@ use std::io::stdin;
 
 use bench::bench;
 use game::Game;
+use game_state::GameState;
+use mcts::state::State;
 use players::{mcts_player::MctsPlayer, random_player::RandomPlayer, Player, PlayerVec};
 
 mod action;
@@ -46,21 +48,40 @@ fn main() {
     }
 
     if args.contains(&"d".to_owned()) {
-        let players: PlayerVec = vec![
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
-        ];
-        let mut game = Game::new(players);
-        while !game.is_terminal() {
-            let mut buf = String::new();
+        let mut state = GameState::new();
+        let mut player = MctsPlayer::default().set_search_time(2000);
+        player.set_index(state.turn());
+
+        let mut buf = String::new();
+
+        loop {
+            buf.clear();
             stdin().read_line(&mut buf).unwrap();
-            println!("{buf}");
 
             match buf.trim() {
-                "r" => game.play_round(),
-                "p" => println!("{game:?}"),
+                "q" => break,
+                "c" => {
+                    println!("\x1B[2J\x1B[1;1H");
+                    //println!("hi");
+                    //println!("hi");
+                    //println!("hi");
+                    //println!("hi");
+                }
+                "d" => {
+                    dbg!(&state);
+                }
+                "p" => {
+                    dbg!(state.possible_actions());
+                }
+                "n" => {
+                    state = GameState::new();
+                    player.set_index(state.turn());
+                }
+                "a" => {
+                    let action = player.decide(state.clone());
+                    println!("player {} plays {action:?}\n", state.turn());
+                    state.apply_action(action);
+                }
                 _ => (),
             }
         }

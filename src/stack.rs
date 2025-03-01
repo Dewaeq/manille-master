@@ -34,6 +34,9 @@ pub struct Stack {
 
 impl Stack {
     pub const ALL: Stack = Stack { data: ALL };
+    //pub const ALL: Stack = Stack {
+    //    data: TENS | ACES | KINGS | EIGHTS,
+    //};
     pub const BELOW: [Stack; 8] = Self::gen_below();
     const ZERO: Stack = Stack { data: 0 };
 

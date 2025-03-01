@@ -14,7 +14,7 @@ impl Player for MctsPlayer {
     }
 
     fn decide(&mut self, state: GameState) -> Action {
-        self.searcher.search(&state, self.index, self.search_time)
+        self.searcher.search(&state, self.search_time)
     }
 }
 

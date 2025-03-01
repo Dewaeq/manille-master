@@ -1,4 +1,6 @@
 pub trait ActionList<T> {
+    fn uninit() -> Self;
+
     fn pop_random(&mut self) -> Option<T>;
 
     fn push(&mut self, action: T);

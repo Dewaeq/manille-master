@@ -12,7 +12,7 @@ impl Searcher {
         Searcher { tree: Tree::new() }
     }
 
-    pub fn search(&mut self, state: &GameState, player: usize, time: u128) -> Action {
+    pub fn search(&mut self, state: &GameState, time: u128) -> Action {
         self.tree.reset();
         let root_id = self.tree.add_state(state.clone(), None, None);
 
@@ -24,11 +24,11 @@ impl Searcher {
                 break;
             }
 
-            let mut state = state.randomize(player);
+            let mut state = state.randomize(state.turn());
 
             let node_id = self.tree.select(root_id, &mut state);
             let node_id = self.tree.expand(node_id, &mut state);
-            let reward = self.simulate(&mut state);
+            let reward = self.simulate(node_id, &mut state);
             self.backpropagate(reward, node_id);
 
             i += 1;
@@ -48,8 +48,8 @@ impl Searcher {
         self.tree.best_action(root_id, state).unwrap()
     }
 
-    pub fn simulate(&self, state: &mut GameState) -> f32 {
-        let perspective = state.last_moved();
+    pub fn simulate(&self, node_id: usize, state: &mut GameState) -> f32 {
+        let perspective = self.tree.get_edge(node_id).unwrap().actor();
 
         while !state.is_terminal() {
             let action = state.possible_actions().pop_random().unwrap();

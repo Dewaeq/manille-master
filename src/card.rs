@@ -73,13 +73,7 @@ impl Card {
 
 impl fmt::Display for Card {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut result = match self.suite() {
-            Suite::Harten => "♥",
-            Suite::Pijkens => "♠",
-            Suite::Klavers => "♣",
-            Suite::Koeken => "♦",
-        }
-        .to_owned();
+        let mut result = self.suite.to_string();
 
         let symbol = match self.value() {
             0..=2 => (self.value() + 7).to_string(),

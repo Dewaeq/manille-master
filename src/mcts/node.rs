@@ -1,7 +1,7 @@
-use super::{action_list::ActionList, state::State};
+use super::{action_list::ActionList, edge::Edge, state::State};
 
 pub struct Node<T: State> {
-    action: Option<T::Action>,
+    edge: Option<Edge<T::Action, usize>>,
     parent_id: Option<usize>,
     child_ids: Vec<usize>,
     tried_actions: T::ActionList,
@@ -15,13 +15,13 @@ impl<T> Node<T>
 where
     T: State,
 {
-    pub fn new(action: Option<T::Action>, parent_id: Option<usize>, state: T) -> Self {
-        let empty_action_list = state.empty_action_list();
+    pub fn new(edge: Option<Edge<T::Action, usize>>, parent_id: Option<usize>, state: T) -> Self {
+        //let empty_action_list = state.empty_action_list();
 
         Node {
-            action,
+            edge,
             parent_id,
-            tried_actions: empty_action_list,
+            tried_actions: T::ActionList::uninit(),
             child_ids: vec![],
             num_sims: 0,
             score: 0.,
@@ -57,8 +57,8 @@ where
         self.is_terminal
     }
 
-    pub fn action(&self) -> Option<T::Action> {
-        self.action.clone()
+    pub fn edge(&self) -> Option<Edge<T::Action, usize>> {
+        self.edge.clone()
     }
 
     pub fn child_ids(&self) -> impl Iterator<Item = &usize> {
@@ -73,8 +73,12 @@ where
         self.num_sims
     }
 
+    pub const fn avg_score(&self) -> f32 {
+        self.score / self.num_sims as f32
+    }
+
     pub fn uct_score(&self, parent_sims: usize) -> f32 {
         let n = self.num_sims as f32;
-        self.score / n + (2. * (parent_sims as f32).ln() / n).sqrt()
+        self.score / n + 0.7 * (2. * (parent_sims as f32).ln() / n).sqrt()
     }
 }

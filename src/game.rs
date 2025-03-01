@@ -26,20 +26,14 @@ impl Game {
     }
 
     fn apply_action(&mut self, action: Action) {
-        #[cfg(feature = "debug")]
-        match &action {
-            Action::PickTrump(_) => println!("{} plays {action:?}", self.state.dealer()),
-            Action::PlayCard(_) => println!("{} plays {action:?}", self.state.turn()),
-        }
         self.state.apply_action(action);
-
-        #[cfg(feature = "debug")]
-        dbg!(&self);
     }
 
     /// returns the winning team and the score of all cards in this trick
     pub fn play_trick(&mut self) {
-        for i in self.state.turn()..(self.state.turn() + 4) {
+        let turn = self.state.turn();
+
+        for i in turn..(turn + 4) {
             let player_idx = i % 4;
             let action = self.players[player_idx].decide(self.state.clone());
 
@@ -57,7 +51,7 @@ impl Game {
     /// play an entire round, i.e. 8 tricks
     /// this method also assigns the next dealer
     pub fn play_round(&mut self) {
-        let action = self.players[self.state.dealer()].decide(self.state.clone());
+        let action = self.players[self.state.turn()].decide(self.state.clone());
         self.apply_action(action);
 
         for _ in 0..8 {
@@ -163,7 +157,7 @@ mod tests {
             let cards = game.state.cards(i);
             seen_cards |= cards;
 
-            assert!(cards.len() == 32 / (game.players.len() as u32));
+            assert!(cards.len() == Stack::ALL.len() / (game.players.len() as u32));
         }
 
         assert!(seen_cards == Stack::ALL);

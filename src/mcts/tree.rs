@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use super::{action_list::ActionList, node::Node, state::State};
+use super::{action_list::ActionList, edge::Edge, node::Node, state::State};
 
 const TREE_SIZE: usize = 500_000;
 
@@ -32,7 +32,7 @@ where
     pub fn add_state(
         &mut self,
         state: T,
-        action: Option<T::Action>,
+        edge: Option<Edge<T::Action, usize>>,
         parent_id: Option<usize>,
     ) -> usize {
         let node_id = self.index;
@@ -41,7 +41,7 @@ where
             self.nodes[parent_id].add_child(node_id);
         }
 
-        let node = Node::new(action, parent_id, state);
+        let node = Node::new(edge, parent_id, state);
 
         self.nodes.push(node);
         self.index += 1;
@@ -52,10 +52,15 @@ where
     pub fn select(&self, mut node_id: usize, state: &mut T) -> usize {
         let mut legal_actions = state.possible_actions();
 
+        // TODO: replace with state.is_terminal, so we can remove Tree::is_terminal
+        // and Node::is_terminal
         while !self.is_terminal(node_id) && self.is_fully_expanded(node_id, &legal_actions) {
             node_id = self.uct_select_child(node_id, &legal_actions).unwrap();
+            //node_id = self.select_random_child(node_id, &legal_actions).unwrap();
 
-            state.apply_action(self.nodes[node_id].action().unwrap());
+            let action = self.get_edge(node_id).unwrap().action();
+            state.apply_action(action);
+
             if state.is_terminal() {
                 break;
             }
@@ -65,12 +70,25 @@ where
         node_id
     }
 
+    fn select_random_child(&self, node_id: usize, legal_actions: &T::ActionList) -> Option<usize> {
+        let options = self.nodes[node_id]
+            .child_ids()
+            .filter(|&&child_id| legal_actions.has(&self.get_edge(child_id).unwrap().action()))
+            .collect::<Vec<_>>();
+        if options.is_empty() {
+            None
+        } else {
+            let i = romu::range_usize(0..options.len());
+            Some(*options[i])
+        }
+    }
+
     fn uct_select_child(&self, node_id: usize, legal_actions: &T::ActionList) -> Option<usize> {
         let n = self.nodes[node_id].num_sims();
 
         self.nodes[node_id]
             .child_ids()
-            .filter(|&&child_id| legal_actions.has(&self.nodes[child_id].action().unwrap()))
+            .filter(|&&child_id| legal_actions.has(&self.get_edge(child_id).unwrap().action()))
             .max_by(|&&x, &&y| {
                 self.nodes[x]
                     .uct_score(n)
@@ -90,9 +108,11 @@ where
         match self.nodes[node_id].pop_action(&legal_actions) {
             None => node_id,
             Some(action) => {
-                state.apply_action(action.clone());
-                //let next_state = self.nodes[node_id].state_ref().next_state(action.clone());
-                self.add_state(state.clone(), Some(action), Some(node_id))
+                let actor = state.turn();
+                let edge = Edge::new(action.clone(), actor);
+
+                state.apply_action(action);
+                self.add_state(state.clone(), Some(edge), Some(node_id))
             }
         }
     }
@@ -101,11 +121,17 @@ where
         let legal_actions = state.possible_actions();
         let child_id = self.nodes[node_id]
             .child_ids()
-            .filter(|&&child_id| legal_actions.has(&self.nodes[child_id].action().unwrap()))
+            .filter(|&&child_id| legal_actions.has(&self.get_edge(child_id).unwrap().action()))
             .max_by_key(|&&child_id| self.nodes[child_id].num_sims())
+            //.max_by(|&&x, &&y| {
+            //    self.nodes[x]
+            //        .avg_score()
+            //        .partial_cmp(&self.nodes[y].avg_score())
+            //        .unwrap()
+            //})
             .unwrap();
 
-        self.nodes[*child_id].action()
+        self.get_edge(*child_id).map(|e| e.action())
     }
 
     pub fn update_node(&mut self, node_id: usize, reward: f32) {
@@ -120,6 +146,10 @@ where
         self.nodes[node_id].parent_id()
     }
 
+    pub fn get_edge(&self, node_id: usize) -> Option<Edge<T::Action, usize>> {
+        self.nodes[node_id].edge()
+    }
+
     pub fn is_terminal(&self, node_id: usize) -> bool {
         self.nodes[node_id].is_terminal()
     }
@@ -132,13 +162,14 @@ where
         let legal_actions = state.possible_actions();
         self.nodes[node_id]
             .child_ids()
-            .filter(|&&child_id| legal_actions.has(&self.nodes[child_id].action().unwrap()))
+            .filter(|&&child_id| legal_actions.has(&self.get_edge(child_id).unwrap().action()))
             .for_each(|&child_id| {
                 println!(
-                    "{:?}: {:?}, {}",
-                    self.nodes[child_id].action(),
+                    "{:?}: uct: {:?}, sims: {}, score: {}",
+                    self.get_edge(child_id).map(|e| e.action()),
                     self.nodes[child_id].uct_score(n),
-                    self.nodes[child_id].num_sims()
+                    self.nodes[child_id].num_sims(),
+                    self.nodes[child_id].avg_score(),
                 )
             });
     }

@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::stack::{HARTEN, KLAVERS, KOEKEN, PIJKENS};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
@@ -27,5 +29,18 @@ impl Suite {
             3 => Suite::Koeken,
             _ => panic!(),
         }
+    }
+}
+
+impl Display for Suite {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let result = match self {
+            Suite::Harten => "♥",
+            Suite::Pijkens => "♠",
+            Suite::Klavers => "♣",
+            Suite::Koeken => "♦",
+        };
+
+        write!(f, "{result}")
     }
 }

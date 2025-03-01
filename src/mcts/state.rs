@@ -4,6 +4,8 @@ pub trait State {
     type Action: Clone + PartialEq;
     type ActionList: ActionList<Self::Action>;
 
+    fn turn(&self) -> usize;
+
     fn randomize(&self, observer: usize) -> Self;
 
     fn empty_action_list(&self) -> Self::ActionList;

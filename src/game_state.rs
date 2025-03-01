@@ -1,11 +1,11 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 use crate::{
     action::Action, action_collection::ActionCollection, card::Card, game_phase::GamePhase,
     mcts::state::State, stack::Stack, suite::Suite, trick::Trick,
 };
 
-const MAX_SCORE: i16 = 61;
+const MAX_SCORE: i16 = 101;
 
 #[derive(Clone, Default)]
 pub struct GameState {
@@ -30,7 +30,12 @@ impl GameState {
     }
 
     fn deal_cards(&mut self) {
-        let mut indices: [u32; 32] = std::array::from_fn(|i| i as u32);
+        // TODO: replace
+        //let mut indices: [u32; 32] = std::array::from_fn(|i| i as u32);
+        let cards_to_deal = Stack::ALL;
+        let mut indices = (0..32)
+            .filter(|&x| cards_to_deal.has_index(x))
+            .collect::<Vec<_>>();
         let mut cards = [Stack::default(); 3];
 
         // number of cards per player
@@ -116,16 +121,8 @@ impl GameState {
         }
     }
 
-    pub const fn turn(&self) -> usize {
-        self.turn
-    }
-
     pub const fn last_moved(&self) -> usize {
         (self.turn + 3) % 4
-    }
-
-    pub const fn dealer(&self) -> usize {
-        self.dealer
     }
 
     pub const fn cards(&self, player: usize) -> Stack {
@@ -205,6 +202,17 @@ impl GameState {
 impl State for GameState {
     type Action = Action;
     type ActionList = ActionCollection;
+
+    /// returns either [self.dealer] or [self.turn], depending
+    /// on the phase of the game
+    /// will panic when called on a terminal state
+    fn turn(&self) -> usize {
+        match self.phase {
+            GamePhase::PickingTrump => self.dealer,
+            GamePhase::PlayingRound => self.turn,
+            GamePhase::Finished { .. } => unreachable!(),
+        }
+    }
 
     fn randomize(&self, observer: usize) -> Self {
         //println!("original state:");
@@ -317,5 +325,20 @@ impl Debug for GameState {
             .field("trick_score", &self.round_score)
             .field("phase", &self.phase)
             .finish()
+    }
+}
+
+impl Display for GameState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for i in 0..4 {
+            writeln!(f, "player {i}: {:?}", self.player_cards[i])?;
+        }
+
+        writeln!(f, "phase: {:?}", self.phase)?;
+        writeln!(f, "dealer: {:?}", self.dealer)?;
+        writeln!(f, "turn: {:?}", self.turn)?;
+        writeln!(f, "total score: {:?}", self.total_score)?;
+
+        Ok(())
     }
 }
