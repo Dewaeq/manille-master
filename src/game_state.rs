@@ -40,9 +40,9 @@ impl GameState {
     }
 
     pub fn set_random_dealer(&mut self) {
+        self.dealer = romu::mod_usize(4);
         // TODO: replace
-        //self.dealer = romu::mod_usize(4);
-        self.dealer = 0;
+        // self.dealer = 0;
         self.turn = (self.dealer + 1) % 4;
     }
 
@@ -107,6 +107,10 @@ impl GameState {
 
     pub const fn turn(&self) -> usize {
         self.turn
+    }
+
+    pub const fn last_moved(&self) -> usize {
+        (self.turn + 3) % 4
     }
 
     pub const fn dealer(&self) -> usize {
@@ -257,7 +261,7 @@ impl State for GameState {
         match self.phase {
             GamePhase::PickingTrump => self.possible_trump_actions(),
             GamePhase::PlayingRound => self.possible_card_actions(),
-            _ => panic!(),
+            _ => unreachable!(),
         }
     }
 

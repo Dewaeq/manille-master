@@ -26,15 +26,18 @@ fn main() {
 
     if args.contains(&"p".to_owned()) {
         let players: PlayerVec = vec![
-            MctsPlayer::boxed(),
+            Box::new(MctsPlayer::default().set_search_time(1000)),
             RandomPlayer::boxed(),
             RandomPlayer::boxed(),
             RandomPlayer::boxed(),
         ];
         let mut game = Game::new(players);
-        //while !game.is_terminal() {
-        game.play_round();
-        //}
+        println!("{game:?}");
+        while !game.is_terminal() {
+            game.play_round();
+        }
+
+        println!("{game:?}");
     }
 
     if args.contains(&"bench".to_owned()) {

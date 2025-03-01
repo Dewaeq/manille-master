@@ -36,19 +36,29 @@ impl Game {
         }
     }
 
+    fn apply_action(&mut self, action: Action) {
+        #[cfg(feature = "debug")]
+        match &action {
+            Action::PickTrump(_) => println!("{} plays {action:?}", self.state.dealer()),
+            Action::PlayCard(_) => println!("{} plays {action:?}", self.state.turn()),
+        }
+        self.state.apply_action(action);
+
+        #[cfg(feature = "debug")]
+        dbg!(&self);
+    }
+
     /// returns the winning team and the score of all cards in this trick
     pub fn play_trick(&mut self) {
         for i in self.state.turn()..(self.state.turn() + 4) {
             let player_idx = i % 4;
             let action = self.players[player_idx].decide(self.state.clone());
 
-            println!("player {player_idx} plays {action:?}");
-
             match action {
                 Action::PlayCard(card) => {
                     debug_assert!(self.is_legal(action));
 
-                    self.state.apply_action(action);
+                    self.apply_action(action);
                     self.players[player_idx].toggle_card(card.get_index());
                 }
                 _ => unreachable!(),
@@ -60,13 +70,9 @@ impl Game {
     /// this method also assigns the next dealer
     pub fn play_round(&mut self) {
         let action = self.players[self.state.dealer()].decide(self.state.clone());
-        println!("{} plays {action:?}", self.state.dealer());
-        self.state.apply_action(action);
-        //let trump = self.players[self.state.dealer()].pick_trump(self.state.clone());
-        //self.state.apply_action(Action::PickTrump(trump));
+        self.apply_action(action);
 
         for _ in 0..8 {
-            println!("{:?}", self.state);
             self.play_trick();
         }
     }

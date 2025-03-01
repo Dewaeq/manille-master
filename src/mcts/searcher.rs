@@ -34,13 +34,22 @@ impl Searcher {
             i += 1;
         }
 
-        self.tree.dbg_actions(root_id, state);
-
+        #[cfg(feature = "debug")]
+        {
+            self.tree.dbg_actions(root_id, state);
+            let elapsed = started.elapsed().as_millis();
+            println!("tree size: {:?}", self.tree.size());
+            println!(
+                "ran {i} simulations in {} ms, thats {} sims/s",
+                elapsed,
+                i as f32 / elapsed as f32 * 1000.
+            );
+        }
         self.tree.best_action(root_id, state).unwrap()
     }
 
     pub fn simulate(&self, state: &mut GameState) -> f32 {
-        let perspective = state.turn();
+        let perspective = state.last_moved();
 
         while !state.is_terminal() {
             let action = state.possible_actions().pop_random().unwrap();

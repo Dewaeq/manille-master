@@ -20,6 +20,10 @@ where
         }
     }
 
+    pub fn size(&mut self) -> (usize, usize, usize) {
+        (self.index, self.nodes.len(), self.nodes.capacity())
+    }
+
     pub fn reset(&mut self) {
         self.index = 0;
         self.nodes = Vec::with_capacity(TREE_SIZE);
@@ -52,6 +56,9 @@ where
             node_id = self.uct_select_child(node_id, &legal_actions).unwrap();
 
             state.apply_action(self.nodes[node_id].action().unwrap());
+            if state.is_terminal() {
+                break;
+            }
             legal_actions = state.possible_actions();
         }
 
@@ -74,6 +81,10 @@ where
     }
 
     pub fn expand(&mut self, node_id: usize, state: &mut T) -> usize {
+        if state.is_terminal() {
+            return node_id;
+        }
+
         let legal_actions = state.possible_actions();
 
         match self.nodes[node_id].pop_action(&legal_actions) {
@@ -124,9 +135,10 @@ where
             .filter(|&&child_id| legal_actions.has(&self.nodes[child_id].action().unwrap()))
             .for_each(|&child_id| {
                 println!(
-                    "{:?}: {:?}",
+                    "{:?}: {:?}, {}",
                     self.nodes[child_id].action(),
-                    self.nodes[child_id].uct_score(n)
+                    self.nodes[child_id].uct_score(n),
+                    self.nodes[child_id].num_sims()
                 )
             });
     }

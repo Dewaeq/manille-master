@@ -6,6 +6,7 @@ pub struct MctsPlayer {
     cards: Stack,
     index: usize,
     searcher: Searcher,
+    search_time: u128,
 }
 
 impl Player for MctsPlayer {
@@ -22,12 +23,15 @@ impl Player for MctsPlayer {
     }
 
     fn decide(&mut self, state: GameState) -> Action {
-        self.searcher.search(&state, self.index, 5000)
+        self.searcher.search(&state, self.index, self.search_time)
     }
+}
 
-    //fn pick_trump(&self, state: GameState) -> Option<Suite> {
-    //    todo!()
-    //}
+impl MctsPlayer {
+    pub fn set_search_time(mut self, time: u128) -> Self {
+        self.search_time = time;
+        self
+    }
 }
 
 impl Default for MctsPlayer {
@@ -36,6 +40,7 @@ impl Default for MctsPlayer {
             cards: Stack::default(),
             index: 0,
             searcher: Searcher::new(),
+            search_time: 500,
         }
     }
 }
