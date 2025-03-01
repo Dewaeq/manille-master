@@ -35,7 +35,7 @@ impl Game {
 
         for i in turn..(turn + 4) {
             let player_idx = i % 4;
-            let action = self.players[player_idx].decide(self.state.clone());
+            let action = self.players[player_idx].decide(self.state);
 
             match action {
                 Action::PlayCard(_) => {
@@ -51,7 +51,7 @@ impl Game {
     /// play an entire round, i.e. 8 tricks
     /// this method also assigns the next dealer
     pub fn play_round(&mut self) {
-        let action = self.players[self.state.turn()].decide(self.state.clone());
+        let action = self.players[self.state.turn()].decide(self.state);
         self.apply_action(action);
 
         for _ in 0..8 {

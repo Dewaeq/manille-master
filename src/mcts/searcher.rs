@@ -14,7 +14,7 @@ impl Searcher {
 
     pub fn search(&mut self, state: &GameState, time: u128) -> Action {
         self.tree.reset();
-        let root_id = self.tree.add_state(state.clone(), None, None);
+        let root_id = self.tree.add_node(state, None, None);
 
         let mut i = 0;
         let started = Instant::now();

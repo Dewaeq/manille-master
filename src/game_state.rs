@@ -5,9 +5,9 @@ use crate::{
     mcts::state::State, stack::Stack, suite::Suite, trick::Trick,
 };
 
-const MAX_SCORE: i16 = 101;
+const MAX_SCORE: i16 = 61;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Copy, Default)]
 pub struct GameState {
     turn: usize,
     dealer: usize,
@@ -121,10 +121,6 @@ impl GameState {
         }
     }
 
-    pub const fn last_moved(&self) -> usize {
-        (self.turn + 3) % 4
-    }
-
     pub const fn cards(&self, player: usize) -> Stack {
         self.player_cards[player]
     }
@@ -218,7 +214,7 @@ impl State for GameState {
         //println!("original state:");
         //dbg!(&self);
 
-        let mut state = self.clone();
+        let mut state = *self;
         let cards_to_deal = Stack::ALL ^ self.player_cards[observer] ^ self.played_cards;
         let mut indices = (0..32)
             .filter(|&x| cards_to_deal.has_index(x))
@@ -312,8 +308,8 @@ impl Debug for GameState {
             //.field("player_cards", &self.player_cards)
             .field("played_cards", &self.played_cards)
             .field("trick", &self.trick)
-            .field("score", &self.total_score)
-            .field("trick_score", &self.round_score)
+            .field("total_score", &self.total_score)
+            .field("round_score", &self.round_score)
             .field("phase", &self.phase)
             .finish()
     }

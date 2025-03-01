@@ -29,9 +29,9 @@ where
         self.nodes = Vec::with_capacity(TREE_SIZE);
     }
 
-    pub fn add_state(
+    pub fn add_node(
         &mut self,
-        state: T,
+        state: &T,
         edge: Option<Edge<T::Action, usize>>,
         parent_id: Option<usize>,
     ) -> usize {
@@ -41,7 +41,8 @@ where
             self.nodes[parent_id].add_child(node_id);
         }
 
-        let node = Node::new(edge, parent_id, state);
+        let is_terminal = state.is_terminal();
+        let node = Node::new(edge, parent_id, is_terminal);
 
         self.nodes.push(node);
         self.index += 1;
@@ -112,7 +113,7 @@ where
                 let edge = Edge::new(action.clone(), actor);
 
                 state.apply_action(action);
-                self.add_state(state.clone(), Some(edge), Some(node_id))
+                self.add_node(state, Some(edge), Some(node_id))
             }
         }
     }

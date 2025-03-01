@@ -15,9 +15,11 @@ impl<T> Node<T>
 where
     T: State,
 {
-    pub fn new(edge: Option<Edge<T::Action, usize>>, parent_id: Option<usize>, state: T) -> Self {
-        //let empty_action_list = state.empty_action_list();
-
+    pub fn new(
+        edge: Option<Edge<T::Action, usize>>,
+        parent_id: Option<usize>,
+        is_terminal: bool,
+    ) -> Self {
         Node {
             edge,
             parent_id,
@@ -25,7 +27,7 @@ where
             child_ids: vec![],
             num_sims: 0,
             score: 0.,
-            is_terminal: state.is_terminal(),
+            is_terminal,
         }
     }
 

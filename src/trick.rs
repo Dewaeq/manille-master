@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use crate::{array::Array, card::Card, suite::Suite};
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Copy)]
 pub struct Trick {
     /// TODO: might be able to remove this field
     cards: Array<Card, 4>,

@@ -1,4 +1,4 @@
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Clone, Copy, Debug)]
 pub enum GamePhase {
     #[default]
     PickingTrump,

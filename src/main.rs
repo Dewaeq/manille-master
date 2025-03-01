@@ -50,7 +50,7 @@ fn main() {
     if args.contains(&"d".to_owned()) {
         let mut state = GameState::new();
         let mut player = MctsPlayer::default().set_search_time(2000);
-        player.set_index(state.turn());
+        //player.set_index(state.turn());
 
         let mut buf = String::new();
 
@@ -78,7 +78,7 @@ fn main() {
                     player.set_index(state.turn());
                 }
                 "a" => {
-                    let action = player.decide(state.clone());
+                    let action = player.decide(state);
                     println!("player {} plays {action:?}\n", state.turn());
                     state.apply_action(action);
                 }
