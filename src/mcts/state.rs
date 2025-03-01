@@ -8,8 +8,6 @@ pub trait State {
 
     fn randomize(&self, observer: usize) -> Self;
 
-    fn empty_action_list(&self) -> Self::ActionList;
-
     fn possible_actions(&self) -> Self::ActionList;
 
     fn next_state(&self, action: Self::Action) -> Self

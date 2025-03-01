@@ -265,15 +265,6 @@ impl State for GameState {
         state
     }
 
-    /// TODO: find a better way to do this, cus this sucks
-    fn empty_action_list(&self) -> Self::ActionList {
-        match self.phase {
-            GamePhase::PickingTrump => ActionCollection::Trumps(0),
-            GamePhase::PlayingRound => ActionCollection::Cards(Stack::default()),
-            _ => ActionCollection::Trumps(0),
-        }
-    }
-
     /// return possible cards to play by [turn],
     /// or possible trumps to pick by [dealer]
     fn possible_actions(&self) -> Self::ActionList {
