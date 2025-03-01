@@ -2,29 +2,18 @@ use crate::{
     action::Action,
     game_state::GameState,
     mcts::{action_list::ActionList, state::State},
-    stack::Stack,
-    suite::Suite,
 };
 
 use super::Player;
 
 #[derive(Default)]
 pub struct RandomPlayer {
-    cards: Stack,
     index: usize,
 }
 
 impl Player for RandomPlayer {
     fn set_index(&mut self, index: usize) {
         self.index = index;
-    }
-
-    fn cards(&self) -> Stack {
-        self.cards
-    }
-
-    fn cards_mut(&mut self) -> &mut Stack {
-        &mut self.cards
     }
 
     fn decide(&mut self, state: GameState) -> Action {

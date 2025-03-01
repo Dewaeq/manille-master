@@ -9,16 +9,17 @@ use crate::{
 };
 
 const BENCH_SIZE: usize = 800_000;
+const THINK_TIME: u128 = 500;
 
 pub fn bench(size: Option<usize>) {
     let size = size.unwrap_or(BENCH_SIZE);
 
     //start_simple_bench::<RandomPlayer>(size, "random");
-    run_bench_multithreaded(10, size, "mcts vs random", false, || {
+    run_bench_multithreaded(14, size, "mcts vs random", false, || {
         vec![
-            Box::new(MctsPlayer::default().set_search_time(1_000)),
+            Box::new(MctsPlayer::default().set_search_time(THINK_TIME)),
             RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
+            Box::new(MctsPlayer::default().set_search_time(THINK_TIME)),
             RandomPlayer::boxed(),
         ]
     });

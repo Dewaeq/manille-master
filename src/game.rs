@@ -15,24 +15,13 @@ pub struct Game {
 
 impl Game {
     pub fn new(mut players: PlayerVec) -> Self {
-        let mut game = Game::default();
-
         for (i, player) in players.iter_mut().enumerate() {
             player.set_index(i);
         }
 
-        game.players = players;
-        game.deal_cards();
-
-        game
-    }
-
-    pub fn deal_cards(&mut self) {
-        self.state.deal_cards();
-        self.state.set_random_dealer();
-
-        for (i, player) in self.players.iter_mut().enumerate() {
-            player.set_cards(self.state.cards(i));
+        Game {
+            players,
+            state: GameState::new(),
         }
     }
 
@@ -55,11 +44,10 @@ impl Game {
             let action = self.players[player_idx].decide(self.state.clone());
 
             match action {
-                Action::PlayCard(card) => {
+                Action::PlayCard(_) => {
                     debug_assert!(self.is_legal(action));
 
                     self.apply_action(action);
-                    self.players[player_idx].toggle_card(card.get_index());
                 }
                 _ => unreachable!(),
             }
@@ -171,8 +159,8 @@ mod tests {
         let game = Game::new(players);
         let mut seen_cards = Stack::default();
 
-        for player in &game.players {
-            let cards = player.cards();
+        for i in 0..4 {
+            let cards = game.state.cards(i);
             seen_cards |= cards;
 
             assert!(cards.len() == 32 / (game.players.len() as u32));

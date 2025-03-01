@@ -5,6 +5,8 @@ use crate::{
     mcts::state::State, stack::Stack, suite::Suite, trick::Trick,
 };
 
+const MAX_SCORE: i16 = 61;
+
 #[derive(Clone, Default)]
 pub struct GameState {
     turn: usize,
@@ -13,13 +15,21 @@ pub struct GameState {
     played_cards: Stack,
     trick: Trick,
     /// total score over all rounds
-    score: [i16; 2],
-    trick_score: [i16; 2],
+    total_score: [i16; 2],
+    round_score: [i16; 2],
     phase: GamePhase,
 }
 
 impl GameState {
-    pub fn deal_cards(&mut self) {
+    pub fn new() -> Self {
+        let mut state = GameState::default();
+        state.set_random_dealer();
+        state.deal_cards();
+
+        state
+    }
+
+    fn deal_cards(&mut self) {
         let mut indices: [u32; 32] = std::array::from_fn(|i| i as u32);
         let mut cards = [Stack::default(); 3];
 
@@ -39,13 +49,16 @@ impl GameState {
         self.player_cards[3] = Stack::ALL ^ cards[0] ^ cards[1] ^ cards[2];
     }
 
-    pub fn set_random_dealer(&mut self) {
+    /// this also changes the game phase to [PickingTrump]
+    fn set_random_dealer(&mut self) {
         self.dealer = romu::mod_usize(4);
         // TODO: replace
         // self.dealer = 0;
         self.turn = (self.dealer + 1) % 4;
+        self.phase = GamePhase::PickingTrump;
     }
 
+    /// this also changes the game phase to [PickingTrump]
     fn set_next_dealer(&mut self) {
         self.dealer = (self.dealer + 1) % 4;
         self.turn = (self.dealer + 1) % 4;
@@ -73,7 +86,7 @@ impl GameState {
         let winner = self.trick.winning_player().unwrap();
         let winning_team = winner % 2;
 
-        self.trick_score[winning_team] += self.trick.score() as i16;
+        self.round_score[winning_team] += self.trick.score() as i16;
         self.turn = winner;
         self.trick.clear();
 
@@ -83,22 +96,20 @@ impl GameState {
     }
 
     fn on_round_finish(&mut self) {
-        debug_assert!(self.trick_score.iter().sum::<i16>() == 60);
+        debug_assert!(self.round_score.iter().sum::<i16>() == 60);
 
-        let winning_team = if self.trick_score[0] >= self.trick_score[1] {
+        let winning_team = if self.round_score[0] >= self.round_score[1] {
             0
         } else {
             1
         };
 
-        self.score[winning_team] += self.trick_score[winning_team] - 30;
-        self.trick_score = [0; 2];
+        self.total_score[winning_team] += self.round_score[winning_team] - 30;
+        self.round_score = [0; 2];
         self.played_cards = Stack::default();
 
-        if self.score[0] >= 61 {
-            self.phase = GamePhase::Finished { winning_team: 0 };
-        } else if self.score[1] >= 61 {
-            self.phase = GamePhase::Finished { winning_team: 1 };
+        if self.total_score[winning_team] >= MAX_SCORE {
+            self.phase = GamePhase::Finished { winning_team };
         } else {
             self.set_next_dealer();
             self.deal_cards();
@@ -302,8 +313,8 @@ impl Debug for GameState {
             //.field("player_cards", &self.player_cards)
             .field("played_cards", &self.played_cards)
             .field("trick", &self.trick)
-            .field("score", &self.score)
-            .field("trick_score", &self.trick_score)
+            .field("score", &self.total_score)
+            .field("trick_score", &self.round_score)
             .field("phase", &self.phase)
             .finish()
     }
