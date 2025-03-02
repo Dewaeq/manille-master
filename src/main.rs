@@ -2,9 +2,9 @@ use std::io::stdin;
 
 use bench::bench;
 use game::Game;
-use game_state::GameState;
 use mcts::state::State;
 use players::{mcts_player::MctsPlayer, random_player::RandomPlayer, Player, PlayerVec};
+use round::Round;
 
 mod action;
 mod action_collection;
@@ -17,6 +17,7 @@ mod game_phase;
 mod game_state;
 mod mcts;
 mod players;
+mod round;
 mod stack;
 mod suite;
 mod trick;
@@ -48,9 +49,8 @@ fn main() {
     }
 
     if args.contains(&"d".to_owned()) {
-        let mut state = GameState::new();
+        let mut state = Round::new(romu::range_usize(0..4));
         let mut player = MctsPlayer::default().set_search_time(2000);
-        //player.set_index(state.turn());
 
         let mut buf = String::new();
 
@@ -62,10 +62,6 @@ fn main() {
                 "q" => break,
                 "c" => {
                     println!("\x1B[2J\x1B[1;1H");
-                    //println!("hi");
-                    //println!("hi");
-                    //println!("hi");
-                    //println!("hi");
                 }
                 "d" => {
                     dbg!(&state);
@@ -74,7 +70,7 @@ fn main() {
                     dbg!(state.possible_actions());
                 }
                 "n" => {
-                    state = GameState::new();
+                    state = Round::new(romu::range_usize(0..4));
                     player.set_index(state.turn());
                 }
                 "a" => {

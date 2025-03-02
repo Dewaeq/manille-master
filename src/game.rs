@@ -5,12 +5,17 @@ use crate::{
     game_state::GameState,
     mcts::{action_list::ActionList, state::State},
     players::PlayerVec,
+    round::Round,
+    stack::Stack,
 };
+
+const MAX_SCORE: i16 = 61;
 
 #[derive(Default)]
 pub struct Game {
-    pub players: PlayerVec,
-    state: GameState,
+    players: PlayerVec,
+    round: Round,
+    scores: [i16; 2],
 }
 
 impl Game {
@@ -19,23 +24,25 @@ impl Game {
             player.set_index(i);
         }
 
+        let dealer = romu::range_usize(0..4);
+
         Game {
             players,
-            state: GameState::new(),
+            round: Round::new(dealer),
+            scores: [0; 2],
         }
     }
 
     fn apply_action(&mut self, action: Action) {
-        self.state.apply_action(action);
+        self.round.apply_action(action);
     }
 
-    /// returns the winning team and the score of all cards in this trick
-    pub fn play_trick(&mut self) {
-        let turn = self.state.turn();
+    fn play_trick(&mut self) {
+        let turn = self.round.turn();
 
         for i in turn..(turn + 4) {
             let player_idx = i % 4;
-            let action = self.players[player_idx].decide(self.state);
+            let action = self.players[player_idx].decide(self.round);
 
             match action {
                 Action::PlayCard(_) => {
@@ -49,14 +56,21 @@ impl Game {
     }
 
     /// play an entire round, i.e. 8 tricks
-    /// this method also assigns the next dealer
     pub fn play_round(&mut self) {
-        let action = self.players[self.state.turn()].decide(self.state);
+        self.round.setup_for_next_round();
+
+        let action = self.players[self.round.turn()].decide(self.round);
         self.apply_action(action);
 
         for _ in 0..8 {
             self.play_trick();
         }
+
+        let scores = self.round.scores();
+        let winning_team = if scores[0] > scores[1] { 0 } else { 1 };
+        self.scores[winning_team] += scores[winning_team] - 30;
+
+        assert!(scores.iter().sum::<i16>() == 60);
     }
 
     /// controleer of deze speler al dan niet kan volgen
@@ -65,71 +79,32 @@ impl Game {
     }
 
     pub fn legal_actions(&self) -> <GameState as State>::ActionList {
-        self.state.possible_actions()
-        //let mut cards = self.players[player].cards();
-        //
-        //// have to follow if possible,
-        //if let Some(suite) = self.trick.suite_to_follow() {
-        //    let filtered_cards = cards & suite.mask();
-        //    if filtered_cards != 0 {
-        //        cards = filtered_cards;
-        //    }
-        //}
-        //
-        //// this also means we're not the first player, i.e. the suite
-        //// to follow has been determined
-        //if let Some((winning_card, winning_player)) = self.trick.winner() {
-        //    // our team is winning
-        //    if winning_player % 2 == player % 2 {
-        //        //todo!();
-        //    } else {
-        //        // have to buy if possible, but can't 'under-buy', except if that's our only possible move
-        //        if let Some(trump) = self.trick.trump() {
-        //            let mut mask = Stack::all_above(winning_card) & winning_card.suite().mask();
-        //
-        //            // we can play any trump if the current winning card isn't a trump
-        //            if winning_card.suite() != trump {
-        //                mask |= trump.mask();
-        //            }
-        //
-        //            let filtered_cards = cards & mask;
-        //            if filtered_cards != 0 {
-        //                cards = filtered_cards;
-        //            }
-        //        }
-        //        // this means that we're playing without trump,
-        //        // so we simply need to play a higher card of the same suite
-        //        else {
-        //            let mask = Stack::all_above(winning_card) & winning_card.suite().mask();
-        //            let filtered_cards = cards & mask;
-        //
-        //            if filtered_cards != 0 {
-        //                cards = filtered_cards;
-        //            }
-        //        }
-        //    }
-        //}
-        //
-        //cards
+        self.round.possible_actions()
+    }
+
+    pub const fn player_cards(&self, player: usize) -> Stack {
+        self.round.player_cards(player)
     }
 
     pub fn is_terminal(&self) -> bool {
-        self.state.is_terminal()
+        self.scores.iter().any(|&s| s >= MAX_SCORE)
     }
 
     pub fn winner(&self) -> usize {
-        self.state.winner()
-    }
+        assert!(self.is_terminal());
 
-    pub fn state_ref(&self) -> &GameState {
-        &self.state
+        self.scores
+            .iter()
+            .enumerate()
+            .max_by_key(|(_, s)| **s)
+            .unwrap()
+            .0
     }
 }
 
 impl Debug for Game {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{:?}", self.state)?;
-        Ok(())
+        writeln!(f, "{:?}", self.round)
     }
 }
 
@@ -154,7 +129,7 @@ mod tests {
         let mut seen_cards = Stack::default();
 
         for i in 0..4 {
-            let cards = game.state.cards(i);
+            let cards = game.player_cards(i);
             seen_cards |= cards;
 
             assert!(cards.len() == Stack::ALL.len() / (game.players.len() as u32));
@@ -164,7 +139,7 @@ mod tests {
     }
 
     #[test]
-    fn test_random_round() {
+    fn test_random_game() {
         let players: PlayerVec = vec![
             RandomPlayer::boxed(),
             RandomPlayer::boxed(),
@@ -173,6 +148,8 @@ mod tests {
         ];
 
         let mut game = Game::new(players);
-        game.play_round();
+        while !game.is_terminal() {
+            game.play_round();
+        }
     }
 }

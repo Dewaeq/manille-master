@@ -1,18 +1,20 @@
-use std::time::Instant;
+use std::{fmt::Debug, time::Instant};
 
 use super::{state::State, tree::Tree};
-use crate::{action::Action, game_state::GameState};
 
-pub struct Searcher {
-    tree: Tree<GameState>,
+pub struct Searcher<T: State + Clone> {
+    tree: Tree<T>,
 }
 
-impl Searcher {
+impl<T: State + Clone> Searcher<T> {
     pub fn new() -> Self {
         Searcher { tree: Tree::new() }
     }
 
-    pub fn search(&mut self, state: &GameState, time: u128) -> Action {
+    pub fn search(&mut self, state: &T, time: u128) -> T::Action
+    where
+        T::Action: Debug,
+    {
         self.tree.reset();
         let root_id = self.tree.add_node(state, None, None);
 
@@ -48,7 +50,7 @@ impl Searcher {
         self.tree.best_action(root_id, state).unwrap()
     }
 
-    pub fn simulate(&self, node_id: usize, state: &mut GameState) -> f32 {
+    pub fn simulate(&self, node_id: usize, state: &mut T) -> f32 {
         let perspective = self.tree.get_edge(node_id).unwrap().actor();
 
         state.do_rollout();

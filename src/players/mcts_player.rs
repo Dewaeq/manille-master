@@ -1,10 +1,10 @@
-use crate::{action::Action, game_state::GameState, mcts::searcher::Searcher};
+use crate::{action::Action, mcts::searcher::Searcher, round::Round};
 
 use super::Player;
 
 pub struct MctsPlayer {
     index: usize,
-    searcher: Searcher,
+    searcher: Searcher<Round>,
     search_time: u128,
 }
 
@@ -13,8 +13,8 @@ impl Player for MctsPlayer {
         self.index = index;
     }
 
-    fn decide(&mut self, state: GameState) -> Action {
-        self.searcher.search(&state, self.search_time)
+    fn decide(&mut self, round: Round) -> Action {
+        self.searcher.search(&round, self.search_time)
     }
 }
 

@@ -1,6 +1,5 @@
-use crate::{action::Action, game_state::GameState};
+use crate::{action::Action, round::Round};
 
-pub mod greedy_player;
 pub mod mcts_player;
 pub mod random_player;
 
@@ -16,7 +15,5 @@ pub trait Player {
 
     fn set_index(&mut self, index: usize);
 
-    fn decide(&mut self, state: GameState) -> Action;
-
-    //fn pick_trump(&self, staate: GameState) -> Option<Suite>;
+    fn decide(&mut self, round: Round) -> Action;
 }
