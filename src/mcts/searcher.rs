@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use super::{state::State, tree::Tree};
-use crate::{action::Action, game_state::GameState, mcts::action_list::ActionList};
+use crate::{action::Action, game_state::GameState};
 
 pub struct Searcher {
     tree: Tree<GameState>,
@@ -51,11 +51,7 @@ impl Searcher {
     pub fn simulate(&self, node_id: usize, state: &mut GameState) -> f32 {
         let perspective = self.tree.get_edge(node_id).unwrap().actor();
 
-        while !state.is_terminal() {
-            let action = state.possible_actions().pop_random().unwrap();
-            state.apply_action(action);
-        }
-
+        state.do_rollout();
         state.reward(perspective)
     }
 

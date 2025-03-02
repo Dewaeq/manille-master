@@ -1,8 +1,14 @@
 use std::fmt::{Debug, Display};
 
 use crate::{
-    action::Action, action_collection::ActionCollection, card::Card, game_phase::GamePhase,
-    mcts::state::State, stack::Stack, suite::Suite, trick::Trick,
+    action::Action,
+    action_collection::ActionCollection,
+    card::Card,
+    game_phase::GamePhase,
+    mcts::{action_list::ActionList, state::State},
+    stack::Stack,
+    suite::Suite,
+    trick::Trick,
 };
 
 const MAX_SCORE: i16 = 61;
@@ -17,6 +23,7 @@ pub struct GameState {
     /// total score over all rounds
     total_score: [i16; 2],
     round_score: [i16; 2],
+    round_winner_team: Option<usize>,
     phase: GamePhase,
 }
 
@@ -84,6 +91,7 @@ impl GameState {
 
     fn set_trump(&mut self, trump: Option<Suite>) {
         self.trick.set_trump(trump);
+        self.round_winner_team = None;
         self.phase = GamePhase::PlayingRound;
     }
 
@@ -110,6 +118,7 @@ impl GameState {
         };
 
         self.total_score[winning_team] += self.round_score[winning_team] - 30;
+        self.round_winner_team = Some(winning_team);
         self.round_score = [0; 2];
         self.played_cards = Stack::default();
 
@@ -282,10 +291,29 @@ impl State for GameState {
         matches!(self.phase, GamePhase::Finished { .. })
     }
 
+    fn do_rollout(&mut self) {
+        if let GamePhase::PickingTrump = self.phase {
+            let action = self.possible_actions().pop_random().unwrap();
+            self.apply_action(action);
+        }
+
+        while let GamePhase::PlayingRound = self.phase {
+            let action = self.possible_actions().pop_random().unwrap();
+            self.apply_action(action);
+        }
+    }
+
     fn reward(&self, perspective: usize) -> f32 {
-        match self.phase {
-            GamePhase::Finished { winning_team } => {
+        match (self.phase, self.round_winner_team) {
+            (GamePhase::Finished { winning_team }, _) => {
                 if perspective % 2 == winning_team {
+                    1.
+                } else {
+                    0.
+                }
+            }
+            (GamePhase::PickingTrump, Some(round_winner_team)) => {
+                if perspective % 2 == round_winner_team {
                     1.
                 } else {
                     0.
@@ -310,6 +338,7 @@ impl Debug for GameState {
             .field("trick", &self.trick)
             .field("total_score", &self.total_score)
             .field("round_score", &self.round_score)
+            .field("round_winner_team", &self.round_winner_team)
             .field("phase", &self.phase)
             .finish()
     }
