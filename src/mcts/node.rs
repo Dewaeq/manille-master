@@ -81,6 +81,6 @@ where
 
     pub fn uct_score(&self, parent_sims: usize) -> f32 {
         let n = self.num_sims as f32;
-        self.score / n + 0.7 * (2. * (parent_sims as f32).ln() / n).sqrt()
+        self.score / n + 4.5 * (2. * (parent_sims as f32).ln() / n).sqrt()
     }
 }
