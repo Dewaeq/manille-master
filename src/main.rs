@@ -1,10 +1,10 @@
 use std::io::stdin;
 
 use bench::bench;
-use game::Game;
 use mcts::state::State;
 use players::{mcts_player::MctsPlayer, random_player::RandomPlayer, Player, PlayerVec};
 use round::Round;
+use tournament::run_tournament_multithreaded;
 
 mod action;
 mod action_collection;
@@ -19,6 +19,7 @@ mod players;
 mod round;
 mod stack;
 mod suite;
+mod tournament;
 mod trick;
 
 fn main() {
@@ -26,20 +27,36 @@ fn main() {
 
     let args: Vec<String> = std::env::args().collect();
 
-    if args.contains(&"p".to_owned()) {
-        let players: PlayerVec = vec![
-            Box::new(MctsPlayer::default().set_search_time(1000)),
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
-        ];
-        let mut game = Game::new(players);
-        println!("{game:?}");
-        while !game.is_terminal() {
-            game.play_round();
-        }
+    if args.contains(&"tournament".to_owned()) {
+        let mut it = args.iter().skip(2);
 
-        println!("{game:?}");
+        let num_games = it.next().and_then(|x| x.parse::<usize>().ok()).unwrap_or(5);
+        let num_threads = it
+            .next()
+            .and_then(|x| x.parse::<usize>().ok())
+            .unwrap_or(14);
+        let think_time = it
+            .next()
+            .and_then(|x| x.parse::<u128>().ok())
+            .unwrap_or(500);
+        let verbose = args.contains(&"verbose".to_owned());
+
+        let player_gen = move || -> PlayerVec {
+            vec![
+                Box::new(MctsPlayer::default().set_search_time(think_time)),
+                Box::new(RandomPlayer::default()),
+                Box::new(MctsPlayer::default().set_search_time(think_time)),
+                Box::new(RandomPlayer::default()),
+            ]
+        };
+
+        run_tournament_multithreaded(
+            num_games,
+            num_threads,
+            "self determ vs normal",
+            verbose,
+            player_gen,
+        );
     }
 
     if args.contains(&"bench".to_owned()) {
