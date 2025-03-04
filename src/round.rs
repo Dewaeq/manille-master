@@ -174,7 +174,26 @@ impl State for Round {
         }
     }
 
-    fn randomize(&self, observer: usize) -> Self {
+    fn randomize(&self) -> Self {
+        let mut round = *self;
+        let cards_to_deal = Stack::ALL ^ self.played_cards;
+        let mut indices = (0..32)
+            .filter(|&x| cards_to_deal.has_index(x))
+            .collect::<Vec<_>>();
+
+        romu::shuffle(&mut indices);
+        let mut start = 0;
+
+        for i in 0..=3 {
+            let n = self.player_cards[i].len() as usize;
+            round.player_cards[i] = Stack::from_slice(&indices[start..(start + n)]);
+            start += n;
+        }
+
+        round
+    }
+
+    fn randomize_for(&self, observer: usize) -> Self {
         let mut round = *self;
         let cards_to_deal = Stack::ALL ^ self.player_cards[observer] ^ self.played_cards;
         let mut indices = (0..32)

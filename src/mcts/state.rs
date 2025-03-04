@@ -6,7 +6,9 @@ pub trait State {
 
     fn turn(&self) -> usize;
 
-    fn randomize(&self, observer: usize) -> Self;
+    fn randomize(&self) -> Self;
+
+    fn randomize_for(&self, observer: usize) -> Self;
 
     fn possible_actions(&self) -> Self::ActionList;
 

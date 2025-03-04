@@ -10,6 +10,7 @@ pub struct MctsPlayer {
     index: usize,
     searcher: Searcher<Round>,
     search_time: u128,
+    use_self_determinization: bool,
 }
 
 impl Player for MctsPlayer {
@@ -25,11 +26,17 @@ impl Player for MctsPlayer {
                 return actions.pop_random().unwrap();
             }
         }
-        self.searcher.search(&round, self.search_time)
+        self.searcher
+            .search(&round, self.search_time, self.use_self_determinization)
     }
 }
 
 impl MctsPlayer {
+    pub fn toggle_self_determinization(mut self, use_self_determinization: bool) -> Self {
+        self.use_self_determinization = use_self_determinization;
+        self
+    }
+
     pub fn set_search_time(mut self, time: u128) -> Self {
         self.search_time = time;
         self
@@ -46,6 +53,7 @@ impl Default for MctsPlayer {
             index: 0,
             searcher: Searcher::new(),
             search_time: 500,
+            use_self_determinization: false,
         }
     }
 }

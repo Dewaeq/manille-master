@@ -11,22 +11,33 @@ impl<T: State + Clone> Searcher<T> {
         Searcher { tree: Tree::new() }
     }
 
-    pub fn search(&mut self, state: &T, time: u128) -> T::Action
+    pub fn search(&mut self, state: &T, time: u128, use_self_determinization: bool) -> T::Action
     where
         T::Action: Debug,
     {
         self.tree.reset();
         let root_id = self.tree.add_node(state, None, None);
 
+        let mut self_determinize = use_self_determinization;
         let mut i = 0;
         let started = Instant::now();
 
         loop {
-            if i % 2048 == 0 && started.elapsed().as_millis() > time {
-                break;
+            if i % 2048 == 0 {
+                if started.elapsed().as_millis() > time {
+                    break;
+                }
+
+                if self_determinize && started.elapsed().as_millis() > time * 3 / 10 {
+                    self_determinize = false;
+                }
             }
 
-            let mut state = state.randomize(state.turn());
+            let mut state = if self_determinize {
+                state.randomize()
+            } else {
+                state.randomize_for(state.turn())
+            };
 
             let node_id = self.tree.select(root_id, &mut state);
             let node_id = self.tree.expand(node_id, &mut state);
