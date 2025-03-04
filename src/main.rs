@@ -52,7 +52,7 @@ fn main() {
         run_tournament_multithreaded(
             num_games,
             num_threads,
-            "self determ vs normal",
+            "mcts vs random",
             verbose,
             player_gen,
         );
