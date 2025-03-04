@@ -8,14 +8,13 @@ pub struct Trick {
     cards: Array<Card, 4>,
     trump: Option<Suite>,
     winner: Option<(Card, usize)>,
-    score: i32,
+    score: i16,
 }
 
 impl Trick {
     /// clear all properties except trump
     pub const fn clear(&mut self) {
         self.cards.clear();
-        //self.trump = None;
         self.winner = None;
         self.score = 0;
     }
@@ -57,7 +56,7 @@ impl Trick {
         self.winner
     }
 
-    pub const fn score(&self) -> i32 {
+    pub const fn score(&self) -> i16 {
         self.score
     }
 

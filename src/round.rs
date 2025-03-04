@@ -90,7 +90,7 @@ impl Round {
         let (_, winner) = self.trick.winner().unwrap();
         let winning_team = winner % 2;
 
-        self.scores[winning_team] += self.trick.score() as i16;
+        self.scores[winning_team] += self.trick.score();
         self.turn = winner;
         self.trick.clear();
     }

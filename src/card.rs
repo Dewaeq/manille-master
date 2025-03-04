@@ -62,8 +62,8 @@ impl Card {
         self.suite
     }
 
-    pub const fn score(&self) -> i32 {
-        match self.value() as i32 {
+    pub const fn score(&self) -> i16 {
+        match self.value() as i16 {
             0..=2 => 0,
             x @ 3..=7 => x - 2,
             _ => unreachable!(),
