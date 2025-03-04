@@ -9,7 +9,7 @@ use crate::{
 };
 
 const BENCH_SIZE: usize = 800_000;
-const THINK_TIME: u128 = 500;
+const THINK_TIME: u128 = 200;
 
 pub fn bench(size: Option<usize>) {
     let size = size.unwrap_or(BENCH_SIZE);
@@ -66,14 +66,14 @@ fn run_bench(size: usize, name: &str, verbose: bool, player_gen: fn() -> PlayerV
     }
 
     let start = Instant::now();
+    let mut total_rounds = 0;
 
     for game in &mut games {
-        loop {
+        while !game.is_terminal() {
             game.play_round();
-            if game.is_terminal() {
-                break;
-            }
         }
+
+        total_rounds += game.num_rounds();
 
         if verbose {
             println!("{}", game.winner());
@@ -85,6 +85,7 @@ fn run_bench(size: usize, name: &str, verbose: bool, player_gen: fn() -> PlayerV
         start.elapsed().as_millis(),
         (size as f64) / start.elapsed().as_secs_f64()
     );
+    println!("avg num of rounds: {}", total_rounds as f64 / size as f64);
 
     let mut score = [0; 2];
     for game in &mut games {

@@ -2,7 +2,6 @@ use std::fmt::Debug;
 
 use crate::{
     action::Action,
-    game_state::GameState,
     mcts::{action_list::ActionList, state::State},
     players::PlayerVec,
     round::Round,
@@ -15,6 +14,7 @@ const MAX_SCORE: i16 = 61;
 pub struct Game {
     players: PlayerVec,
     round: Round,
+    num_rounds: usize,
     scores: [i16; 2],
 }
 
@@ -29,6 +29,7 @@ impl Game {
         Game {
             players,
             round: Round::new(dealer),
+            num_rounds: 0,
             scores: [0; 2],
         }
     }
@@ -71,6 +72,7 @@ impl Game {
         self.scores[winning_team] += scores[winning_team] - 30;
 
         assert!(scores.iter().sum::<i16>() == 60);
+        self.num_rounds += 1;
     }
 
     /// controleer of deze speler al dan niet kan volgen
@@ -78,12 +80,16 @@ impl Game {
         self.legal_actions().has(&action)
     }
 
-    pub fn legal_actions(&self) -> <GameState as State>::ActionList {
+    pub fn legal_actions(&self) -> <Round as State>::ActionList {
         self.round.possible_actions()
     }
 
     pub const fn player_cards(&self, player: usize) -> Stack {
         self.round.player_cards(player)
+    }
+
+    pub const fn num_rounds(&self) -> usize {
+        self.num_rounds
     }
 
     pub fn is_terminal(&self) -> bool {
@@ -104,6 +110,8 @@ impl Game {
 
 impl Debug for Game {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "total score: {:?}", self.scores)?;
+        writeln!(f, "rounds: {}", self.num_rounds)?;
         writeln!(f, "{:?}", self.round)
     }
 }
