@@ -5,7 +5,11 @@ pub trait ActionList<T> {
 
     fn push(&mut self, action: T);
 
-    fn is_empty(&self) -> bool;
+    fn len(&self) -> usize;
+
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 
     fn has(&self, item: &T) -> bool
     where

@@ -71,11 +71,11 @@ impl ActionList<Action> for ActionCollection {
         }
     }
 
-    fn is_empty(&self) -> bool {
+    fn len(&self) -> usize {
         match self {
-            ActionCollection::Cards(stack) => stack.len() == 0,
-            ActionCollection::Trumps(bits) => *bits == 0,
-            ActionCollection::Uninit => true,
+            ActionCollection::Cards(stack) => stack.len() as _,
+            ActionCollection::Trumps(bits) => bits.count_ones() as _,
+            ActionCollection::Uninit => 0,
         }
     }
 
