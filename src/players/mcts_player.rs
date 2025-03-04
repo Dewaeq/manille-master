@@ -1,4 +1,8 @@
-use crate::{action::Action, mcts::searcher::Searcher, round::Round};
+use crate::{
+    action::Action,
+    mcts::{action_list::ActionList, searcher::Searcher, state::State},
+    round::Round,
+};
 
 use super::Player;
 
@@ -14,6 +18,13 @@ impl Player for MctsPlayer {
     }
 
     fn decide(&mut self, round: Round) -> Action {
+        #[cfg(not(feature = "debug"))]
+        {
+            let mut actions = round.possible_actions();
+            if actions.len() == 1 {
+                return actions.pop_random().unwrap();
+            }
+        }
         self.searcher.search(&round, self.search_time)
     }
 }
