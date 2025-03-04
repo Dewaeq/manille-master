@@ -14,7 +14,6 @@ mod bits;
 mod card;
 mod game;
 mod game_phase;
-mod game_state;
 mod mcts;
 mod players;
 mod round;
