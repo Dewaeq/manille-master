@@ -215,9 +215,11 @@ impl State for Round {
     fn reward(&self, perspective: usize) -> f32 {
         assert!(self.is_terminal());
 
-        match self.scores[0].cmp(&self.scores[1]) {
-            Ordering::Greater => (perspective == 0) as usize as f32,
-            Ordering::Less => (perspective == 1) as usize as f32,
+        let team = perspective % 2;
+
+        match self.scores[team].cmp(&self.scores[1 - team]) {
+            Ordering::Greater => 1.,
+            Ordering::Less => 0.,
             Ordering::Equal => 0.5,
         }
     }
