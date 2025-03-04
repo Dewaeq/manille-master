@@ -53,19 +53,11 @@ impl Trick {
         self.cards.push(card);
     }
 
-    pub fn winner(&self) -> Option<(Card, usize)> {
+    pub const fn winner(&self) -> Option<(Card, usize)> {
         self.winner
     }
 
-    pub fn winning_card(&self) -> Option<Card> {
-        self.winner.map(|(card, _)| card)
-    }
-
-    pub fn winning_player(&self) -> Option<usize> {
-        self.winner.map(|(_, player)| player)
-    }
-
-    pub fn score(&self) -> i32 {
+    pub const fn score(&self) -> i32 {
         self.score
     }
 

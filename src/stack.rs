@@ -34,10 +34,8 @@ pub struct Stack {
 
 impl Stack {
     pub const ALL: Stack = Stack { data: ALL };
-    //pub const ALL: Stack = Stack {
-    //    data: TENS | ACES | KINGS | EIGHTS,
-    //};
     pub const BELOW: [Stack; 8] = Self::gen_below();
+
     const ZERO: Stack = Stack { data: 0 };
 
     const fn gen_below() -> [Stack; 8] {
@@ -155,7 +153,7 @@ impl Stack {
         None
     }
 
-    pub fn all_below(card: Card) -> Stack {
+    pub const fn all_below(card: Card) -> Stack {
         Self::BELOW[card.value() as usize]
     }
 

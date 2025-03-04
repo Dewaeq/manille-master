@@ -5,6 +5,9 @@ use crate::{
     suite::Suite,
 };
 
+const NO_TRUMP_INDEX: u8 = 4;
+const NO_TRUMP_MASK: u8 = 1 << NO_TRUMP_INDEX;
+
 #[derive(Clone, Copy)]
 pub enum ActionCollection {
     Cards(Stack),
@@ -28,7 +31,7 @@ impl ActionList<Action> for ActionCollection {
                 if let Some(suite) = trump {
                     *bits |= 1 << suite as u8;
                 } else {
-                    *bits |= 1 << 4;
+                    *bits |= 1 << NO_TRUMP_INDEX;
                 }
             }
             (this @ ActionCollection::Uninit, Action::PlayCard(card)) => {
@@ -39,7 +42,7 @@ impl ActionList<Action> for ActionCollection {
                 let bits = if let Some(suite) = trump {
                     1 << suite as u8
                 } else {
-                    1 << 4
+                    1 << NO_TRUMP_INDEX
                 };
 
                 *this = ActionCollection::Trumps(bits);
@@ -57,7 +60,7 @@ impl ActionList<Action> for ActionCollection {
                     None
                 } else {
                     let index = select_random_set_bit(*bits as _);
-                    let choice = if index == 4 {
+                    let choice = if index == NO_TRUMP_INDEX as _ {
                         None
                     } else {
                         Some(unsafe { std::mem::transmute::<u8, Suite>(index as u8) })
@@ -86,7 +89,7 @@ impl ActionList<Action> for ActionCollection {
                 if let Some(suite) = trump {
                     *bits & 1 << *suite as u8 != 0
                 } else {
-                    *bits & 1 << 4 != 0
+                    *bits & NO_TRUMP_MASK != 0
                 }
             }
             (ActionCollection::Uninit, _) => false,
@@ -113,10 +116,14 @@ impl Debug for ActionCollection {
         match self {
             Self::Cards(stack) => writeln!(f, "{stack:?}"),
             Self::Trumps(bits) => {
-                let suites = [Suite::Pijkens, Suite::Klavers, Suite::Harten, Suite::Koeken]
+                let mut suites = [Suite::Pijkens, Suite::Klavers, Suite::Harten, Suite::Koeken]
                     .into_iter()
                     .filter(|&s| bits & 1 << s as u8 != 0)
+                    .map(Some)
                     .collect::<Vec<_>>();
+                if bits & NO_TRUMP_MASK != 0 {
+                    suites.push(None);
+                }
 
                 writeln!(f, "{suites:?}")
             }

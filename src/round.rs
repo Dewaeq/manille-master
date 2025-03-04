@@ -33,14 +33,14 @@ impl Round {
         round
     }
 
-    fn set_dealer(&mut self, dealer: usize) {
+    const fn set_dealer(&mut self, dealer: usize) {
         self.dealer = dealer;
         self.turn = (dealer + 1) % 4;
     }
 
     pub fn setup_for_next_round(&mut self) {
-        let dealer = (self.dealer + 1) % 4;
-        self.set_dealer(dealer);
+        let next_dealer = (self.dealer + 1) % 4;
+        self.set_dealer(next_dealer);
         self.deal_cards();
 
         self.played_cards = Stack::default();
@@ -81,13 +81,13 @@ impl Round {
         }
     }
 
-    fn set_trump(&mut self, trump: Option<Suite>) {
+    const fn set_trump(&mut self, trump: Option<Suite>) {
         self.trick.set_trump(trump);
         self.phase = RoundPhase::PlayCards;
     }
 
-    fn on_trick_finish(&mut self) {
-        let winner = self.trick.winning_player().unwrap();
+    const fn on_trick_finish(&mut self) {
+        let (_, winner) = self.trick.winner().unwrap();
         let winning_team = winner % 2;
 
         self.scores[winning_team] += self.trick.score() as i16;
@@ -141,6 +141,7 @@ impl Round {
         ActionCollection::Cards(cards)
     }
 
+    /// TODO: add possibility to play without trump
     fn possible_trump_actions(&self) -> <Self as State>::ActionList {
         let cards = self.player_cards[self.dealer];
         let mut bits = 0;
