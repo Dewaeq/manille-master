@@ -23,6 +23,10 @@ impl MctsPlayer {
         self.search_time = time;
         self
     }
+
+    pub const fn get_search_time(&self) -> u128 {
+        self.search_time
+    }
 }
 
 impl Default for MctsPlayer {

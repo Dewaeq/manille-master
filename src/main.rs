@@ -50,35 +50,45 @@ fn main() {
 
     if args.contains(&"d".to_owned()) {
         let mut state = Round::new(romu::range_usize(0..4));
-        let mut player = MctsPlayer::default().set_search_time(2000);
-
+        let mut player = MctsPlayer::default().set_search_time(1_000);
         let mut buf = String::new();
 
         loop {
             buf.clear();
             stdin().read_line(&mut buf).unwrap();
-
-            match buf.trim() {
-                "q" => break,
-                "c" => {
-                    println!("\x1B[2J\x1B[1;1H");
+            for c in buf.chars() {
+                match c {
+                    'q' => return,
+                    '+' => {
+                        let prev_time = player.get_search_time();
+                        player = MctsPlayer::default().set_search_time(prev_time + 100);
+                    }
+                    '-' => {
+                        let prev_time = player.get_search_time();
+                        player = MctsPlayer::default().set_search_time(prev_time - 100);
+                    }
+                    't' => {
+                        println!("current search time: {}", player.get_search_time());
+                    }
+                    'c' => {
+                        println!("\x1B[2J\x1B[1;1H");
+                    }
+                    'd' => {
+                        dbg!(&state);
+                    }
+                    'p' => {
+                        dbg!(state.possible_actions());
+                    }
+                    'n' => {
+                        state = Round::new(romu::range_usize(0..4));
+                    }
+                    'a' => {
+                        let action = player.decide(state);
+                        println!("player {} plays {action:?}\n", state.turn());
+                        state.apply_action(action);
+                    }
+                    _ => (),
                 }
-                "d" => {
-                    dbg!(&state);
-                }
-                "p" => {
-                    dbg!(state.possible_actions());
-                }
-                "n" => {
-                    state = Round::new(romu::range_usize(0..4));
-                    player.set_index(state.turn());
-                }
-                "a" => {
-                    let action = player.decide(state);
-                    println!("player {} plays {action:?}\n", state.turn());
-                    state.apply_action(action);
-                }
-                _ => (),
             }
         }
     }
