@@ -8,6 +8,7 @@ pub struct Node<T: State> {
     is_terminal: bool,
 
     num_sims: usize,
+    avails: usize,
     score: f32,
 }
 
@@ -24,8 +25,9 @@ where
             edge,
             parent_id,
             tried_actions: T::ActionList::uninit(),
-            child_ids: vec![],
+            child_ids: Vec::with_capacity(23),
             num_sims: 0,
+            avails: 1,
             score: 0.,
             is_terminal,
         }
@@ -50,6 +52,10 @@ where
         action
     }
 
+    pub const fn increase_availability(&mut self) {
+        self.avails += 1;
+    }
+
     pub fn update(&mut self, reward: f32) {
         self.num_sims += 1;
         self.score += reward;
@@ -63,8 +69,8 @@ where
         self.edge.clone()
     }
 
-    pub fn child_ids(&self) -> impl Iterator<Item = &usize> {
-        self.child_ids.iter()
+    pub fn child_ids_ref(&self) -> &Vec<usize> {
+        &self.child_ids
     }
 
     pub const fn parent_id(&self) -> Option<usize> {
@@ -79,8 +85,8 @@ where
         self.score / self.num_sims as f32
     }
 
-    pub fn uct_score(&self, parent_sims: usize) -> f32 {
+    pub fn uct_score(&self) -> f32 {
         let n = self.num_sims as f32;
-        self.score / n + 4.5 * (2. * (parent_sims as f32).ln() / n).sqrt()
+        self.score / n + 4.5 * (2. * (self.avails as f32).ln() / n).sqrt()
     }
 }
