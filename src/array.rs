@@ -1,4 +1,4 @@
-use std::ops::Index;
+use std::{ops::Index, slice::SliceIndex};
 
 #[derive(Clone, Copy)]
 pub struct Array<T: Copy + Default, const N: usize> {
@@ -47,15 +47,22 @@ impl<T: Copy + Default, const N: usize> Array<T, N> {
         self.index -= 1;
     }
 
+    pub fn iter(&self) -> impl Iterator<Item = &T> {
+        self.data.iter().take(self.index)
+    }
+
     pub const fn len(&self) -> usize {
         self.index
     }
 }
 
-impl<T: Copy + Default, const N: usize> Index<usize> for Array<T, N> {
-    type Output = T;
+impl<Idx, T: Copy + Default, const N: usize> Index<Idx> for Array<T, N>
+where
+    Idx: SliceIndex<[T]>,
+{
+    type Output = Idx::Output;
 
-    fn index(&self, index: usize) -> &Self::Output {
+    fn index(&self, index: Idx) -> &Self::Output {
         &self.data[index]
     }
 }

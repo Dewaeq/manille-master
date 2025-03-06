@@ -1,9 +1,15 @@
+use crate::array::Array;
+
 use super::{action_list::ActionList, edge::Edge, state::State};
+
+type ChildArray = Array<usize, 24>;
+//type ChildArray = Vec<usize>;
 
 pub struct Node<T: State> {
     edge: Option<Edge<T::Action, usize>>,
     parent_id: Option<usize>,
-    child_ids: Vec<usize>,
+    //child_ids: Vec<usize>,
+    child_ids: ChildArray,
     tried_actions: T::ActionList,
     is_terminal: bool,
 
@@ -25,7 +31,8 @@ where
             edge,
             parent_id,
             tried_actions: T::ActionList::uninit(),
-            child_ids: Vec::with_capacity(23),
+            //child_ids: Vec::with_capacity(23),
+            child_ids: Default::default(),
             num_sims: 0,
             avails: 1,
             score: 0.,
@@ -69,7 +76,7 @@ where
         self.edge.clone()
     }
 
-    pub fn child_ids_ref(&self) -> &Vec<usize> {
+    pub fn child_ids_ref(&self) -> &ChildArray {
         &self.child_ids
     }
 
