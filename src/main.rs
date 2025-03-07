@@ -4,6 +4,7 @@ use bench::bench;
 use mcts::state::State;
 use players::{mcts_player::MctsPlayer, random_player::RandomPlayer, Player, PlayerVec};
 use round::Round;
+use sprt::run_sprt;
 use tournament::run_tournament_multithreaded;
 
 mod action;
@@ -16,6 +17,7 @@ mod game;
 mod mcts;
 mod players;
 mod round;
+mod sprt;
 mod stack;
 mod suite;
 mod tournament;
@@ -25,6 +27,21 @@ fn main() {
     romu::seed();
 
     let args: Vec<String> = std::env::args().collect();
+    if args.contains(&"sprt".to_owned()) {
+        let think_time = args
+            .last()
+            .and_then(|x| x.parse::<u128>().ok())
+            .unwrap_or(10);
+        let player_gen = move || -> PlayerVec {
+            vec![
+                Box::new(RandomPlayer::default()),
+                Box::new(MctsPlayer::default().set_search_time(think_time)),
+                Box::new(RandomPlayer::default()),
+                Box::new(MctsPlayer::default().set_search_time(think_time)),
+            ]
+        };
+        run_sprt(14, player_gen);
+    }
 
     if args.contains(&"tournament".to_owned()) {
         let mut it = args.iter().skip(2);
