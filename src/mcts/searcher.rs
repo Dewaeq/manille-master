@@ -30,8 +30,8 @@ impl<T: State + Clone> Searcher<T> {
 
             let node_id = self.tree.select(root_id, &mut state);
             let node_id = self.tree.expand(node_id, &mut state);
-            let reward = self.simulate(node_id, &mut state);
-            self.backpropagate(reward, node_id);
+            state.do_rollout();
+            self.backpropagate(&state, node_id);
 
             i += 1;
         }
@@ -50,20 +50,14 @@ impl<T: State + Clone> Searcher<T> {
         self.tree.best_action(root_id, state).unwrap()
     }
 
-    pub fn simulate(&self, node_id: usize, state: &mut T) -> f32 {
-        let perspective = self.tree.get_edge(node_id).unwrap().actor();
-
-        state.do_rollout();
-        state.reward(perspective)
-    }
-
-    fn backpropagate(&mut self, mut reward: f32, node_id: usize) {
+    fn backpropagate(&mut self, state: &T, node_id: usize) {
         let mut node_id = Some(node_id);
 
         while let Some(id) = node_id {
-            self.tree.update_node(id, reward);
+            if let Some(edge) = self.tree.get_edge(id) {
+                self.tree.update_node(id, state.reward(edge.actor()));
+            }
             node_id = self.tree.get_parent_id(id);
-            reward = 1. - reward;
         }
     }
 }
