@@ -1,10 +1,10 @@
 use std::io::stdin;
 
 use bench::bench;
-use game::Game;
 use game_state::GameState;
 use mcts::state::State;
 use players::{mcts_player::MctsPlayer, random_player::RandomPlayer, Player, PlayerVec};
+use sprt::run_sprt;
 
 mod action;
 mod action_collection;
@@ -17,6 +17,7 @@ mod game_phase;
 mod game_state;
 mod mcts;
 mod players;
+mod sprt;
 mod stack;
 mod suite;
 mod trick;
@@ -25,21 +26,21 @@ fn main() {
     romu::seed();
 
     let args: Vec<String> = std::env::args().collect();
+    if args.contains(&"sprt".to_owned()) {
+        let think_time = args
+            .last()
+            .and_then(|x| x.parse::<u128>().ok())
+            .unwrap_or(10);
 
-    if args.contains(&"p".to_owned()) {
-        let players: PlayerVec = vec![
-            Box::new(MctsPlayer::default().set_search_time(1000)),
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
-        ];
-        let mut game = Game::new(players);
-        println!("{game:?}");
-        while !game.is_terminal() {
-            game.play_round();
-        }
-
-        println!("{game:?}");
+        let player_gen = move || -> PlayerVec {
+            vec![
+                Box::new(RandomPlayer::default()),
+                Box::new(MctsPlayer::default().set_search_time(think_time)),
+                Box::new(RandomPlayer::default()),
+                Box::new(MctsPlayer::default().set_search_time(think_time)),
+            ]
+        };
+        run_sprt(14, player_gen);
     }
 
     if args.contains(&"bench".to_owned()) {
