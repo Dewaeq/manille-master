@@ -70,25 +70,26 @@ where
         node_id
     }
 
+    /// this method relies on the fact that child ids are strictly greater than the
+    /// id of their parent
     fn uct_select_child(&mut self, node_id: usize, legal_actions: &T::ActionList) -> Option<usize> {
-        let legal_children = self.nodes[node_id]
-            .child_ids_ref()
-            .iter()
-            .filter(|&&child_id| legal_actions.has(&self.get_edge(child_id).unwrap().action()))
-            .copied()
-            .collect::<Vec<_>>();
-
         let mut best_child = None;
         let mut best_score = f32::MIN;
 
-        for child_id in legal_children {
-            let uct_score = self.nodes[child_id].uct_score();
-            if uct_score > best_score {
-                best_score = uct_score;
-                best_child = Some(child_id);
-            }
+        let split_pos = node_id + 1;
+        let (left, right) = self.nodes.split_at_mut(split_pos);
+        let parent = left.last().unwrap();
 
-            self.nodes[child_id].increase_availability();
+        for &child_id in parent.child_ids_ref().iter() {
+            let action = right[child_id - split_pos].edge().unwrap().action();
+            if legal_actions.has(&action) {
+                let uct_score = right[child_id - split_pos].uct_score();
+                if uct_score > best_score {
+                    best_score = uct_score;
+                    best_child = Some(child_id);
+                }
+                right[child_id - split_pos].increase_availability();
+            }
         }
 
         best_child
