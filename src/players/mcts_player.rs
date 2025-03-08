@@ -20,7 +20,19 @@ impl Player for MctsPlayer {
         }
         let result = self.searcher.search(&round, self.search_time);
         #[cfg(feature = "debug")]
-        println!("{:?}", result.scored_actions);
+        {
+            println!(
+                "ran {} simulations at {} sims/sec",
+                result.num_simulations,
+                result.num_simulations as f32 / result.duration.as_secs_f32()
+            );
+            for &(stats, action) in result.child_stats.iter() {
+                println!(
+                    "{action}:\tscore={:.5},\tsims={}",
+                    stats.avg_score, stats.num_sims
+                );
+            }
+        }
         result.best_action.unwrap()
     }
 }
