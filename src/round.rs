@@ -201,10 +201,9 @@ impl Round {
         ActionCollection::Cards(cards)
     }
 
-    /// TODO: add possibility to play without trump
     fn possible_trump_actions(&self) -> <Self as State>::ActionList {
         let cards = self.player_cards[self.dealer];
-        let mut bits = 0;
+        let mut bits = 1 << 4;
 
         for suite in [Suit::Spades, Suit::Clubs, Suit::Hearts, Suit::Diamonds] {
             if cards.has_suite(suite) {
