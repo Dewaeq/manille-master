@@ -1,9 +1,8 @@
 use std::fmt::Debug;
 
-use crate::{
-    action::Action, bits::select_random_set_bit, mcts::action_list::ActionList, stack::Stack,
-    suite::Suite,
-};
+use ismcts::action_list::ActionList;
+
+use crate::{action::Action, bits::select_random_set_bit, stack::Stack, suite::Suite};
 
 const NO_TRUMP_INDEX: u8 = 4;
 const NO_TRUMP_MASK: u8 = 1 << NO_TRUMP_INDEX;

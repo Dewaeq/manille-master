@@ -10,6 +10,7 @@ bmi2 = []
 debug = []
 
 [dependencies]
+ismcts = "0.2.0"
 romu = "0.6.0"
 
 [profile.release]

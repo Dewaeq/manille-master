@@ -1,8 +1,10 @@
 use std::{cmp::Ordering, fmt::Debug};
 
+use ismcts::state::State;
+
 use crate::{
-    action::Action, action_collection::ActionCollection, card::Card, mcts::state::State,
-    stack::Stack, suite::Suite, trick::Trick,
+    action::Action, action_collection::ActionCollection, card::Card, stack::Stack, suite::Suite,
+    trick::Trick,
 };
 
 #[derive(Default, Clone, Copy, Debug)]

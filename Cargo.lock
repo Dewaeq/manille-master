@@ -20,9 +20,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ismcts"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "edc9df4380a91ff94ad888013cc725e7c27d2563868ecf3e63eca7bbc0cadadb"
+dependencies = [
+ "romu",
+]
+
+[[package]]
 name = "kleurenwiezen"
 version = "0.1.0"
 dependencies = [
+ "ismcts",
  "romu",
 ]
 

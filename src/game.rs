@@ -1,12 +1,8 @@
 use std::fmt::Debug;
 
-use crate::{
-    action::Action,
-    mcts::{action_list::ActionList, state::State},
-    players::PlayerVec,
-    round::Round,
-    stack::Stack,
-};
+use ismcts::{action_list::ActionList, state::State};
+
+use crate::{action::Action, players::PlayerVec, round::Round, stack::Stack};
 
 const MAX_SCORE: i16 = 61;
 

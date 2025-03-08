@@ -1,7 +1,7 @@
+use ismcts::state::State;
 use std::io::stdin;
 
 use bench::bench;
-use mcts::state::State;
 use players::{mcts_player::MctsPlayer, random_player::RandomPlayer, Player, PlayerVec};
 use round::Round;
 use sprt::run_sprt;
@@ -14,7 +14,6 @@ mod bench;
 mod bits;
 mod card;
 mod game;
-mod mcts;
 mod players;
 mod round;
 mod sprt;

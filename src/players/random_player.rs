@@ -1,8 +1,6 @@
-use crate::{
-    action::Action,
-    mcts::{action_list::ActionList, state::State},
-    round::Round,
-};
+use ismcts::{action_list::ActionList, state::State};
+
+use crate::{action::Action, round::Round};
 
 use super::Player;
 

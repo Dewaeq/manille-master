@@ -1,8 +1,6 @@
-use crate::{
-    action::Action,
-    mcts::{action_list::ActionList, searcher::Searcher, state::State},
-    round::Round,
-};
+use ismcts::{action_list::ActionList, searcher::Searcher, state::State};
+
+use crate::{action::Action, round::Round};
 
 use super::Player;
 
@@ -44,7 +42,7 @@ impl Default for MctsPlayer {
     fn default() -> Self {
         MctsPlayer {
             index: 0,
-            searcher: Searcher::new(),
+            searcher: Searcher::default(),
             search_time: 500,
         }
     }
