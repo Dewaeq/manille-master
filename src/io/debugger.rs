@@ -1,12 +1,16 @@
 use ismcts::state::State;
 
+use crate::action::Action;
+use crate::action_collection::ActionCollection;
 use crate::io::input;
 use crate::players::{mcts_player::MctsPlayer, Player};
-use crate::round::Round;
+use crate::round::{Round, RoundPhase};
+use crate::stack::Stack;
 
 pub fn run() {
     let mut state = Round::new(romu::range_usize(0..4));
     let mut player = MctsPlayer::default().set_search_time(1_000);
+    let mut observer = None;
 
     loop {
         for c in input::read_line().chars() {
@@ -37,21 +41,23 @@ pub fn run() {
                 }
                 'i' => {
                     state = input::read_round();
+                    observer = Some(0);
+                }
+                'f' => {
+                    let actions = match state.phase() {
+                        RoundPhase::PickTrump => ActionCollection::Trumps(0b11111),
+                        RoundPhase::PlayCards => {
+                            ActionCollection::Cards(Stack::ALL ^ state.played_cards())
+                        }
+                    };
+                    let actions = request_action(actions);
+                    for action in actions {
+                        state = state.observe_action(observer.unwrap(), action);
+                    }
                 }
                 'm' => {
-                    let possible_actions = state.possible_actions().to_vec();
-                    for (i, a) in possible_actions.iter().enumerate() {
-                        println!("{i}: {a:?}");
-                    }
-                    loop {
-                        if let Ok(idx) = input::read_parsed::<usize>("action index:") {
-                            if idx < possible_actions.len() {
-                                let action = possible_actions[idx];
-                                state.apply_action(action);
-                                break;
-                            }
-                        }
-                    }
+                    let action = request_action(state.possible_actions()).pop().unwrap();
+                    state.apply_action(action);
                 }
                 'a' => {
                     let action = player.decide(state);
@@ -60,6 +66,28 @@ pub fn run() {
                 }
                 _ => (),
             }
+        }
+    }
+}
+
+fn request_action(possible_actions: ActionCollection) -> Vec<Action> {
+    let possible_actions = possible_actions.to_vec();
+
+    for (i, a) in possible_actions.iter().enumerate() {
+        println!("{i}: {a:?}");
+    }
+
+    loop {
+        let indices = input::read_vec_parsed::<usize>("actions: ");
+        let selected_actions = indices
+            .into_iter()
+            .filter(|&i| i < possible_actions.len())
+            .map(|i| possible_actions[i])
+            .collect::<Vec<_>>();
+
+        println!("selected: {selected_actions:#?}");
+        if input::read_line().contains("y") {
+            return selected_actions;
         }
     }
 }

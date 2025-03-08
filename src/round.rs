@@ -7,7 +7,7 @@ use crate::{
     trick::Trick,
 };
 
-#[derive(Default, Clone, Copy, Debug)]
+#[derive(Default, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RoundPhase {
     #[default]
     PickTrump,
@@ -53,6 +53,17 @@ impl Round {
         round.trick.set_trump(trump);
 
         round
+    }
+
+    pub fn observe_action(&self, observer: usize, action: Action) -> Self {
+        let mut round = *self;
+        if let Action::PlayCard(card) = action {
+            if !round.player_cards(round.turn()).has_card(card) {
+                round.player_cards[round.turn()].pop_random_card();
+            }
+        }
+        round.apply_action(action);
+        round.randomize(observer)
     }
 
     fn randomize_for(
@@ -132,7 +143,7 @@ impl Round {
     fn play_card(&mut self, card: Card) {
         self.trick.play(card, self.turn);
         self.played_cards |= 1 << card.get_index();
-        self.player_cards[self.turn] ^= 1 << card.get_index();
+        self.player_cards[self.turn] &= !(1 << card.get_index());
 
         if self.trick.is_finished() {
             self.on_trick_finish();
@@ -216,6 +227,22 @@ impl Round {
 
     pub const fn player_cards(&self, player: usize) -> Stack {
         self.player_cards[player]
+    }
+
+    pub const fn played_cards(&self) -> Stack {
+        self.played_cards
+    }
+
+    pub const fn dealer(&self) -> usize {
+        self.dealer
+    }
+
+    pub const fn phase(&self) -> RoundPhase {
+        self.phase
+    }
+
+    pub const fn trump(&self) -> Option<Suit> {
+        self.trick.trump()
     }
 
     pub const fn scores(&self) -> [i16; 2] {

@@ -8,25 +8,45 @@ use crate::{
 
 pub fn read_round() -> Round {
     let observer_cards = read_stack("observer cards: ");
+
     println!("{observer_cards:?}");
-    let played_cards = read_stack("played cards: ");
-    println!("{played_cards:?}");
-    let player_card_counts = read_vec_parsed("card counts: ").try_into().unwrap();
-    let dealer = read_parsed("dealer: ").unwrap();
-    let turn = read_parsed("turn: ").unwrap();
-    let scores = read_vec_parsed("scores: ").try_into().unwrap();
+
     let phase = unsafe {
-        let idx = read_parsed::<u8>("phase: ").unwrap();
+        let idx = read_parsed::<u8>("phase (0): ").unwrap_or(0);
         std::mem::transmute::<u8, RoundPhase>(idx)
     };
-    let trump = {
-        let idx = read_parsed::<u8>("trump: ").unwrap();
-        if idx == 4 {
+
+    let mut dealer = 0;
+    let mut turn = 1;
+    let mut played_cards = Stack::default();
+    let mut player_card_counts = [8; 4];
+    let mut trump = None;
+    let mut scores = [0; 2];
+
+    if phase == RoundPhase::PickTrump {
+        dealer = read_parsed("dealer (0): ").unwrap_or(dealer);
+        turn = (dealer + 1) % 4;
+    }
+    if phase == RoundPhase::PlayCards {
+        played_cards = read_stack("played cards: ");
+        println!("{played_cards:?}");
+        player_card_counts = read_vec_parsed("card counts ([8, 8, 8, 8]): ")
+            .try_into()
+            .unwrap_or(player_card_counts);
+
+        let trump_idx = read_parsed::<u8>("trump: ").unwrap();
+        trump = if trump_idx == 4 {
             None
         } else {
-            Some(Suit::from(idx))
-        }
-    };
+            Some(Suit::from(trump_idx))
+        };
+
+        scores = read_vec_parsed("scores ([0, 0]): ")
+            .try_into()
+            .unwrap_or(scores);
+
+        turn = read_parsed("turn (1): ").unwrap_or(turn);
+    }
 
     Round::from_observer(
         observer_cards,
@@ -52,15 +72,12 @@ pub fn read_parsed<T: FromStr>(message: &str) -> Result<T, T::Err> {
     read_line().trim().parse::<T>()
 }
 
-fn read_vec_parsed<T: FromStr>(message: &str) -> Vec<T>
-where
-    T::Err: Debug,
-{
+pub fn read_vec_parsed<T: FromStr>(message: &str) -> Vec<T> {
     println!("{message}");
 
     read_line()
         .split_whitespace()
-        .map(|c| c.parse::<T>().unwrap())
+        .flat_map(|c| c.parse::<T>())
         .collect::<Vec<_>>()
 }
 
