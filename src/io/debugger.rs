@@ -40,10 +40,9 @@ pub fn run() {
                 }
                 'm' => {
                     let possible_actions = state.possible_actions().to_vec();
-                    println!(
-                        "{:?}",
-                        possible_actions.iter().enumerate().collect::<Vec<_>>()
-                    );
+                    for (i, a) in possible_actions.iter().enumerate() {
+                        println!("{i}: {a:?}");
+                    }
                     loop {
                         if let Ok(idx) = input::read_parsed::<usize>("action index:") {
                             if idx < possible_actions.len() {

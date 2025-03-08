@@ -18,7 +18,10 @@ impl Player for MctsPlayer {
                 return actions.pop_random().unwrap();
             }
         }
-        self.searcher.search(&round, self.search_time)
+        let result = self.searcher.search(&round, self.search_time);
+        #[cfg(feature = "debug")]
+        println!("{:?}", result.scored_actions);
+        result.best_action.unwrap()
     }
 }
 
