@@ -12,7 +12,7 @@ mod players;
 mod round;
 mod sprt;
 mod stack;
-mod suite;
+mod suit;
 mod tournament;
 mod trick;
 

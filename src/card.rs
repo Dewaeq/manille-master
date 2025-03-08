@@ -1,4 +1,4 @@
-use crate::suite::Suite;
+use crate::suit::Suit;
 use std::fmt;
 
 /// Some info on the following structures:
@@ -15,7 +15,7 @@ use std::fmt;
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub struct Card {
     value: u8,
-    suite: Suite,
+    suite: Suit,
     index: u8,
 }
 
@@ -24,14 +24,14 @@ impl Card {
         Self::from_raw(index, None, None)
     }
 
-    pub const fn from_raw(index: u32, value: Option<u8>, suite: Option<Suite>) -> Self {
+    pub const fn from_raw(index: u32, value: Option<u8>, suite: Option<Suit>) -> Self {
         let value = match value {
             Some(v) => v,
             None => (index % 8) as _,
         };
         let suite = match suite {
             Some(s) => s,
-            None => Suite::from_index(index),
+            None => Suit::from_index(index),
         };
 
         Self {
@@ -58,7 +58,7 @@ impl Card {
         self.value as _
     }
 
-    pub const fn suite(&self) -> Suite {
+    pub const fn suite(&self) -> Suit {
         self.suite
     }
 
@@ -77,9 +77,9 @@ impl fmt::Display for Card {
 
         let symbol = match self.value() {
             0..=2 => (self.value() + 7).to_string(),
-            3 => "V".to_owned(),
-            4 => "D".to_owned(),
-            5 => "H".to_owned(),
+            3 => "J".to_owned(),
+            4 => "Q".to_owned(),
+            5 => "K".to_owned(),
             6 => "A".to_owned(),
             7 => "10".to_owned(),
             _ => unreachable!(),

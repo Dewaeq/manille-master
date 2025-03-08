@@ -3,7 +3,7 @@ use std::{fmt::Debug, io::stdin, str::FromStr};
 use crate::{
     round::{Round, RoundPhase},
     stack::Stack,
-    suite::Suite,
+    suit::Suit,
 };
 
 pub fn read_round() -> Round {
@@ -24,7 +24,7 @@ pub fn read_round() -> Round {
         if idx == 4 {
             None
         } else {
-            Some(Suite::from(idx))
+            Some(Suit::from(idx))
         }
     };
 

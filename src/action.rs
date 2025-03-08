@@ -1,8 +1,8 @@
-use crate::{card::Card, suite::Suite};
+use crate::{card::Card, suit::Suit};
 
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum Action {
     /// None means play without trump
-    PickTrump(Option<Suite>),
+    PickTrump(Option<Suit>),
     PlayCard(Card),
 }

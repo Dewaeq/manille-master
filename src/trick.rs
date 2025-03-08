@@ -1,12 +1,12 @@
 use std::fmt::Debug;
 
-use crate::{array::Array, card::Card, suite::Suite};
+use crate::{array::Array, card::Card, suit::Suit};
 
 #[derive(Default, Clone, Copy)]
 pub struct Trick {
     /// TODO: might be able to remove this field
     cards: Array<Card, 4>,
-    trump: Option<Suite>,
+    trump: Option<Suit>,
     winner: Option<(Card, usize)>,
     score: i16,
 }
@@ -19,7 +19,7 @@ impl Trick {
         self.score = 0;
     }
 
-    pub const fn set_trump(&mut self, trump: Option<Suite>) {
+    pub const fn set_trump(&mut self, trump: Option<Suit>) {
         self.trump = trump;
     }
 
@@ -60,11 +60,11 @@ impl Trick {
         self.score
     }
 
-    pub fn suite_to_follow(&self) -> Option<Suite> {
+    pub fn suite_to_follow(&self) -> Option<Suit> {
         self.cards.get(0).map(|c| c.suite())
     }
 
-    pub const fn trump(&self) -> Option<Suite> {
+    pub const fn trump(&self) -> Option<Suit> {
         self.trump
     }
 

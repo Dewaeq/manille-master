@@ -6,7 +6,7 @@ use crate::{
     action::Action,
     bits::{pop_lsb, select_random_set_bit},
     stack::Stack,
-    suite::Suite,
+    suit::Suit,
 };
 
 const NO_TRUMP_INDEX: u8 = 4;
@@ -33,7 +33,7 @@ impl ActionCollection {
                     let action = if idx == NO_TRUMP_INDEX as _ {
                         None
                     } else {
-                        Some(Suite::from(idx as u8))
+                        Some(Suit::from(idx as u8))
                     };
 
                     actions.push(Action::PickTrump(action));
@@ -92,7 +92,7 @@ impl ActionList<Action> for ActionCollection {
                     let choice = if index == NO_TRUMP_INDEX as _ {
                         None
                     } else {
-                        Some(Suite::from(index as u8))
+                        Some(Suit::from(index as u8))
                     };
 
                     *bits ^= 1 << index;
@@ -145,7 +145,7 @@ impl Debug for ActionCollection {
         match self {
             Self::Cards(stack) => writeln!(f, "{stack:?}"),
             Self::Trumps(bits) => {
-                let mut suites = [Suite::Pijkens, Suite::Klavers, Suite::Harten, Suite::Koeken]
+                let mut suites = [Suit::Spades, Suit::Clubs, Suit::Hearts, Suit::Diamonds]
                     .into_iter()
                     .filter(|&s| bits & 1 << s as u8 != 0)
                     .map(Some)

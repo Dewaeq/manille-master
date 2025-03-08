@@ -1,22 +1,19 @@
 use core::fmt;
-use std::{
-    io::stdin,
-    ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not},
-};
+use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 
 use crate::{
     array::Array,
     bits::{lsb, msb, pop_lsb, pop_random_set_bit, select_random_set_bit},
     card::Card,
-    suite::Suite,
+    suit::Suit,
 };
 
-pub const PIJKENS: u32 = 0b11111111;
-pub const KLAVERS: u32 = PIJKENS << 8;
-pub const HARTEN: u32 = PIJKENS << 16;
-pub const KOEKEN: u32 = PIJKENS << 24;
+pub const SPADES: u32 = 0b11111111;
+pub const CLUBS: u32 = SPADES << 8;
+pub const HEARTS: u32 = SPADES << 16;
+pub const DIAMONDS: u32 = SPADES << 24;
 
-pub const ALL: u32 = PIJKENS | KLAVERS | HARTEN | KOEKEN;
+pub const ALL: u32 = SPADES | CLUBS | HEARTS | DIAMONDS;
 
 const TENS: u32 = 1 << 7 | 1 << 15 | 1 << 23 | 1 << 31;
 const ACES: u32 = TENS >> 1;
@@ -106,11 +103,11 @@ impl Stack {
         }
     }
 
-    pub fn pick_random_suite(&self) -> Suite {
+    pub fn pick_random_suite(&self) -> Suit {
         self.pick_random_card().suite()
     }
 
-    pub const fn highest_of_suite(&self, suite: Suite) -> Option<Card> {
+    pub const fn highest_of_suite(&self, suite: Suit) -> Option<Card> {
         let masked = self.data & suite.mask();
 
         if masked != 0 {
@@ -133,7 +130,7 @@ impl Stack {
         None
     }
 
-    pub const fn lowest_of_suite(&self, suite: Suite) -> Option<Card> {
+    pub const fn lowest_of_suite(&self, suite: Suit) -> Option<Card> {
         let masked = self.data & suite.mask();
 
         if masked != 0 {
@@ -164,7 +161,7 @@ impl Stack {
         !Self::all_below(card)
     }
 
-    pub const fn has_suite(&self, suite: Suite) -> bool {
+    pub const fn has_suite(&self, suite: Suit) -> bool {
         self.data & suite.mask() != 0
     }
 

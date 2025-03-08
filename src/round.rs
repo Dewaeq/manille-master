@@ -3,7 +3,7 @@ use std::{cmp::Ordering, fmt::Debug};
 use ismcts::state::State;
 
 use crate::{
-    action::Action, action_collection::ActionCollection, card::Card, stack::Stack, suite::Suite,
+    action::Action, action_collection::ActionCollection, card::Card, stack::Stack, suit::Suit,
     trick::Trick,
 };
 
@@ -35,7 +35,7 @@ impl Round {
         dealer: usize,
         turn: usize,
         phase: RoundPhase,
-        trump: Option<Suite>,
+        trump: Option<Suit>,
         scores: [i16; 2],
     ) -> Self {
         let observer = 0;
@@ -141,7 +141,7 @@ impl Round {
         }
     }
 
-    const fn set_trump(&mut self, trump: Option<Suite>) {
+    const fn set_trump(&mut self, trump: Option<Suit>) {
         self.trick.set_trump(trump);
         self.phase = RoundPhase::PlayCards;
     }
@@ -206,7 +206,7 @@ impl Round {
         let cards = self.player_cards[self.dealer];
         let mut bits = 0;
 
-        for suite in [Suite::Pijkens, Suite::Klavers, Suite::Harten, Suite::Koeken] {
+        for suite in [Suit::Spades, Suit::Clubs, Suit::Hearts, Suit::Diamonds] {
             if cards.has_suite(suite) {
                 bits |= 1 << suite as u8;
             }
