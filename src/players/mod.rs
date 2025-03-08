@@ -1,5 +1,6 @@
 use crate::{action::Action, round::Round};
 
+pub mod human_player;
 pub mod mcts_player;
 pub mod random_player;
 
@@ -13,7 +14,7 @@ pub trait Player {
         Box::new(Self::default())
     }
 
-    fn set_index(&mut self, index: usize);
+    fn set_index(&mut self, _index: usize) {}
 
     fn decide(&mut self, round: Round) -> Action;
 }

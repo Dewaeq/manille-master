@@ -1,4 +1,4 @@
-use std::{ops::Index, slice::SliceIndex};
+use std::{fmt::Debug, ops::Index, slice::SliceIndex};
 
 #[derive(Clone, Copy)]
 pub struct Array<T: Copy + Default, const N: usize> {
@@ -81,5 +81,15 @@ impl<T: Copy + Default, const N: usize> FromIterator<T> for Array<T, N> {
         }
 
         ar
+    }
+}
+
+impl<T: Copy + Default + Debug, const N: usize> Debug for Array<T, N> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for i in 0..self.index {
+            write!(f, "{:?}, ", self.data[i])?;
+        }
+
+        Ok(())
     }
 }

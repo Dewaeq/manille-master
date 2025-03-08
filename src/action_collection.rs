@@ -1,7 +1,10 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 use crate::{
-    action::Action, bits::select_random_set_bit, mcts::action_list::ActionList, stack::Stack,
+    action::Action,
+    bits::{lsb, pop_lsb, select_random_set_bit},
+    mcts::action_list::ActionList,
+    stack::Stack,
     suite::Suite,
 };
 
@@ -15,6 +18,36 @@ pub enum ActionCollection {
     /// bit 4 means without trump
     Trumps(u8),
     Uninit,
+}
+
+impl ActionCollection {
+    pub fn to_vec(self) -> Vec<Action> {
+        let mut results = vec![];
+
+        match self {
+            ActionCollection::Cards(stack) => {
+                for card in stack.into_iter() {
+                    results.push(Action::PlayCard(card));
+                }
+            }
+            ActionCollection::Trumps(mut bits) => {
+                while bits != 0 {
+                    let index = lsb(bits as _);
+                    let choice = if index == NO_TRUMP_INDEX as _ {
+                        None
+                    } else {
+                        Some(unsafe { std::mem::transmute::<u8, Suite>(index as u8) })
+                    };
+
+                    results.push(Action::PickTrump(choice));
+                    bits ^= 1 << index;
+                }
+            }
+            ActionCollection::Uninit => (),
+        }
+
+        results
+    }
 }
 
 impl ActionList<Action> for ActionCollection {
@@ -107,6 +140,36 @@ impl ActionList<Action> for ActionCollection {
             }
             (this, ActionCollection::Uninit) => *this,
             _ => unreachable!(),
+        }
+    }
+}
+
+impl Display for ActionCollection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Cards(stack) => {
+                for (i, card) in stack.into_iter().enumerate() {
+                    writeln!(f, "{i}: {card}")?;
+                }
+                Ok(())
+            }
+            Self::Trumps(bits) => {
+                let mut trumps = [Suite::Pijkens, Suite::Klavers, Suite::Harten, Suite::Koeken]
+                    .into_iter()
+                    .filter(|&s| bits & 1 << s as u8 != 0)
+                    .map(|s| s.to_string())
+                    .collect::<Vec<_>>();
+                if bits & NO_TRUMP_MASK != 0 {
+                    trumps.push("no trump".to_owned());
+                }
+
+                for (i, trump) in trumps.iter().enumerate() {
+                    writeln!(f, "{i}: {trump}")?;
+                }
+
+                Ok(())
+            }
+            Self::Uninit => writeln!(f, "Uninit"),
         }
     }
 }

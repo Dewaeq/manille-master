@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 use crate::{array::Array, card::Card, suite::Suite};
 
@@ -70,6 +70,15 @@ impl Trick {
 
     pub const fn is_finished(&self) -> bool {
         self.cards.len() == 4
+    }
+}
+
+impl Display for Trick {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "trick: {:?}", self.cards)?;
+        writeln!(f, "trump: {:?}", self.trump)?;
+
+        Ok(())
     }
 }
 

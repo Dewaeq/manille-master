@@ -16,6 +16,7 @@ pub struct Game {
     round: Round,
     num_rounds: usize,
     scores: [i16; 2],
+    pub verbose: bool,
 }
 
 impl Game {
@@ -31,11 +32,19 @@ impl Game {
             round: Round::new(dealer),
             num_rounds: 0,
             scores: [0; 2],
+            verbose: false,
         }
     }
 
     fn apply_action(&mut self, action: Action) {
+        if self.verbose {
+            println!("player {} plays {action:?}", self.round.turn());
+        }
         self.round.apply_action(action);
+
+        if self.verbose {
+            println!("{}", self.round.trick_ref());
+        }
     }
 
     fn play_trick(&mut self) {

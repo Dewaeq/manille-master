@@ -1,8 +1,12 @@
 use std::io::stdin;
 
 use bench::bench;
+use game::Game;
 use mcts::state::State;
-use players::{mcts_player::MctsPlayer, random_player::RandomPlayer, Player, PlayerVec};
+use players::{
+    human_player::HumanPlayer, mcts_player::MctsPlayer, random_player::RandomPlayer, Player,
+    PlayerVec,
+};
 use round::Round;
 use sprt::run_sprt;
 use tournament::run_tournament_multithreaded;
@@ -27,6 +31,23 @@ fn main() {
     romu::seed();
 
     let args: Vec<String> = std::env::args().collect();
+
+    if args.contains(&"play".to_owned()) {
+        let players: PlayerVec = vec![
+            HumanPlayer::boxed(),
+            MctsPlayer::boxed(),
+            MctsPlayer::boxed(),
+            MctsPlayer::boxed(),
+        ];
+
+        let mut game = Game::new(players);
+        game.verbose = true;
+
+        while !game.is_terminal() {
+            game.play_round();
+        }
+    }
+
     if args.contains(&"sprt".to_owned()) {
         let think_time = args
             .last()

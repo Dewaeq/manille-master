@@ -162,6 +162,10 @@ impl Round {
     pub const fn scores(&self) -> [i16; 2] {
         self.scores
     }
+
+    pub const fn trick_ref(&self) -> &Trick {
+        &self.trick
+    }
 }
 
 impl State for Round {
