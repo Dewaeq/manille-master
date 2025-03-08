@@ -2,7 +2,12 @@ use std::fmt::Debug;
 
 use ismcts::action_list::ActionList;
 
-use crate::{action::Action, bits::select_random_set_bit, stack::Stack, suite::Suite};
+use crate::{
+    action::Action,
+    bits::{pop_lsb, select_random_set_bit},
+    stack::Stack,
+    suite::Suite,
+};
 
 const NO_TRUMP_INDEX: u8 = 4;
 const NO_TRUMP_MASK: u8 = 1 << NO_TRUMP_INDEX;
@@ -14,6 +19,31 @@ pub enum ActionCollection {
     /// bit 4 means without trump
     Trumps(u8),
     Uninit,
+}
+
+impl ActionCollection {
+    pub fn to_vec(self) -> Vec<Action> {
+        match self {
+            ActionCollection::Cards(stack) => stack.into_iter().map(Action::PlayCard).collect(),
+            ActionCollection::Trumps(bits) => {
+                let mut actions = vec![];
+                let mut bits = bits as u32;
+                while bits != 0 {
+                    let idx = pop_lsb(&mut bits);
+                    let action = if idx == NO_TRUMP_INDEX as _ {
+                        None
+                    } else {
+                        Some(Suite::from(idx as u8))
+                    };
+
+                    actions.push(Action::PickTrump(action));
+                }
+
+                actions
+            }
+            ActionCollection::Uninit => vec![],
+        }
+    }
 }
 
 impl ActionList<Action> for ActionCollection {
@@ -62,7 +92,7 @@ impl ActionList<Action> for ActionCollection {
                     let choice = if index == NO_TRUMP_INDEX as _ {
                         None
                     } else {
-                        Some(unsafe { std::mem::transmute::<u8, Suite>(index as u8) })
+                        Some(Suite::from(index as u8))
                     };
 
                     *bits ^= 1 << index;

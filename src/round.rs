@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[derive(Default, Clone, Copy, Debug)]
-enum RoundPhase {
+pub enum RoundPhase {
     #[default]
     PickTrump,
     PlayCards,
@@ -26,6 +26,64 @@ pub struct Round {
 }
 
 impl Round {
+    /// should only be used between tricks
+    #[allow(clippy::too_many_arguments)]
+    pub fn from_observer(
+        observer_cards: Stack,
+        played_cards: Stack,
+        player_card_counts: [usize; 4],
+        dealer: usize,
+        turn: usize,
+        phase: RoundPhase,
+        trump: Option<Suite>,
+        scores: [i16; 2],
+    ) -> Self {
+        let observer = 0;
+        let mut round = Round::default().randomize_for(
+            observer,
+            observer_cards,
+            played_cards,
+            player_card_counts,
+        );
+
+        round.turn = turn;
+        round.dealer = dealer;
+        round.phase = phase;
+        round.scores = scores;
+        round.trick.set_trump(trump);
+
+        round
+    }
+
+    fn randomize_for(
+        &self,
+        observer: usize,
+        observer_cards: Stack,
+        played_cards: Stack,
+        player_card_counts: [usize; 4],
+    ) -> Self {
+        let mut round = *self;
+
+        let cards_to_deal = Stack::ALL ^ observer_cards ^ played_cards;
+        let mut indices = (0..32)
+            .filter(|&x| cards_to_deal.has_index(x))
+            .collect::<Vec<_>>();
+
+        romu::shuffle(&mut indices);
+        let mut start = 0;
+
+        for i in 1..=3 {
+            let n = player_card_counts[(observer + i) % 4];
+            round.player_cards[(observer + i) % 4] =
+                Stack::from_slice(&indices[start..(start + n)]);
+            start += n;
+        }
+
+        round.player_cards[observer] = observer_cards;
+
+        round
+    }
+
     pub fn new(dealer: usize) -> Self {
         let mut round = Round::default();
 
@@ -178,23 +236,15 @@ impl State for Round {
     }
 
     fn randomize(&self, observer: usize) -> Self {
-        let mut round = *self;
-        let cards_to_deal = Stack::ALL ^ self.player_cards[observer] ^ self.played_cards;
-        let mut indices = (0..32)
-            .filter(|&x| cards_to_deal.has_index(x))
-            .collect::<Vec<_>>();
+        let observer_cards = self.player_cards[observer];
+        let player_card_counts = std::array::from_fn(|i| self.player_cards[i].len() as usize);
 
-        romu::shuffle(&mut indices);
-        let mut start = 0;
-
-        for i in 1..=3 {
-            let n = self.player_cards[(observer + i) % 4].len() as usize;
-            round.player_cards[(observer + i) % 4] =
-                Stack::from_slice(&indices[start..(start + n)]);
-            start += n;
-        }
-
-        round
+        self.randomize_for(
+            observer,
+            observer_cards,
+            self.played_cards,
+            player_card_counts,
+        )
     }
 
     fn possible_actions(&self) -> Self::ActionList {

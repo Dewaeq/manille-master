@@ -32,6 +32,12 @@ impl Suite {
     }
 }
 
+impl From<u8> for Suite {
+    fn from(value: u8) -> Self {
+        unsafe { std::mem::transmute::<u8, Self>(value) }
+    }
+}
+
 impl Display for Suite {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let result = match self {
