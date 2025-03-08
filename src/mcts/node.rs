@@ -3,15 +3,12 @@ use crate::array::Array;
 use super::{action_list::ActionList, edge::Edge, state::State};
 
 type ChildArray = Array<usize, 24>;
-//type ChildArray = Vec<usize>;
 
 pub struct Node<T: State> {
     edge: Option<Edge<T::Action, usize>>,
     parent_id: Option<usize>,
-    //child_ids: Vec<usize>,
     child_ids: ChildArray,
     tried_actions: T::ActionList,
-    is_terminal: bool,
 
     num_sims: usize,
     avails: usize,
@@ -22,21 +19,15 @@ impl<T> Node<T>
 where
     T: State,
 {
-    pub fn new(
-        edge: Option<Edge<T::Action, usize>>,
-        parent_id: Option<usize>,
-        is_terminal: bool,
-    ) -> Self {
+    pub fn new(edge: Option<Edge<T::Action, usize>>, parent_id: Option<usize>) -> Self {
         Node {
             edge,
             parent_id,
             tried_actions: T::ActionList::uninit(),
-            //child_ids: Vec::with_capacity(23),
             child_ids: Default::default(),
             num_sims: 0,
             avails: 1,
             score: 0.,
-            is_terminal,
         }
     }
 
@@ -66,10 +57,6 @@ where
     pub fn update(&mut self, reward: f32) {
         self.num_sims += 1;
         self.score += reward;
-    }
-
-    pub fn is_terminal(&self) -> bool {
-        self.is_terminal
     }
 
     pub fn edge(&self) -> Option<Edge<T::Action, usize>> {

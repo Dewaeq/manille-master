@@ -235,7 +235,6 @@ impl Debug for Round {
         f.debug_struct("Round")
             .field("turn", &self.turn)
             .field("dealer", &self.dealer)
-            //.field("player_cards", &self.player_cards)
             .field("played_cards", &self.played_cards)
             .field("trick", &self.trick)
             .field("scores", &self.scores)

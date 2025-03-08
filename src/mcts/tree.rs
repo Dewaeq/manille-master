@@ -31,7 +31,6 @@ where
 
     pub fn add_node(
         &mut self,
-        state: &T,
         edge: Option<Edge<T::Action, usize>>,
         parent_id: Option<usize>,
     ) -> usize {
@@ -41,8 +40,7 @@ where
             self.nodes[parent_id].add_child(node_id);
         }
 
-        let is_terminal = state.is_terminal();
-        let node = Node::new(edge, parent_id, is_terminal);
+        let node = Node::new(edge, parent_id);
 
         self.nodes.push(node);
         self.index += 1;
@@ -55,7 +53,7 @@ where
 
         // TODO: replace with state.is_terminal, so we can remove Tree::is_terminal
         // and Node::is_terminal
-        while !self.is_terminal(node_id) && self.is_fully_expanded(node_id, &legal_actions) {
+        while !state.is_terminal() && self.is_fully_expanded(node_id, &legal_actions) {
             node_id = self.uct_select_child(node_id, &legal_actions).unwrap();
 
             let action = self.get_edge(node_id).unwrap().action();
@@ -109,7 +107,7 @@ where
                 let edge = Edge::new(action.clone(), actor);
 
                 state.apply_action(action);
-                self.add_node(state, Some(edge), Some(node_id))
+                self.add_node(Some(edge), Some(node_id))
             }
         }
     }
@@ -140,10 +138,6 @@ where
 
     pub fn get_edge(&self, node_id: usize) -> Option<Edge<T::Action, usize>> {
         self.nodes[node_id].edge()
-    }
-
-    pub fn is_terminal(&self, node_id: usize) -> bool {
-        self.nodes[node_id].is_terminal()
     }
 
     pub fn dbg_actions(&self, node_id: usize, state: &T)

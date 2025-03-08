@@ -16,7 +16,7 @@ impl<T: State + Clone> Searcher<T> {
         T::Action: Debug,
     {
         self.tree.reset();
-        let root_id = self.tree.add_node(state, None, None);
+        let root_id = self.tree.add_node(None, None);
 
         let mut i = 0;
         let started = Instant::now();
