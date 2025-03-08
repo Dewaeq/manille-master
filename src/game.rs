@@ -15,11 +15,7 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(mut players: PlayerVec) -> Self {
-        for (i, player) in players.iter_mut().enumerate() {
-            player.set_index(i);
-        }
-
+    pub fn new(players: PlayerVec) -> Self {
         let dealer = romu::range_usize(0..4);
 
         Game {

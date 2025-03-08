@@ -5,15 +5,9 @@ use crate::{action::Action, round::Round};
 use super::Player;
 
 #[derive(Default)]
-pub struct RandomPlayer {
-    index: usize,
-}
+pub struct RandomPlayer;
 
 impl Player for RandomPlayer {
-    fn set_index(&mut self, index: usize) {
-        self.index = index;
-    }
-
     fn decide(&mut self, round: Round) -> Action {
         round.possible_actions().pop_random().unwrap()
     }

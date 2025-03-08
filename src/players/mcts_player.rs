@@ -5,16 +5,11 @@ use crate::{action::Action, round::Round};
 use super::Player;
 
 pub struct MctsPlayer {
-    index: usize,
     searcher: Searcher<Round>,
     search_time: u128,
 }
 
 impl Player for MctsPlayer {
-    fn set_index(&mut self, index: usize) {
-        self.index = index;
-    }
-
     fn decide(&mut self, round: Round) -> Action {
         #[cfg(not(feature = "debug"))]
         {
@@ -41,7 +36,6 @@ impl MctsPlayer {
 impl Default for MctsPlayer {
     fn default() -> Self {
         MctsPlayer {
-            index: 0,
             searcher: Searcher::default(),
             search_time: 500,
         }

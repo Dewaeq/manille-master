@@ -13,7 +13,5 @@ pub trait Player {
         Box::new(Self::default())
     }
 
-    fn set_index(&mut self, index: usize);
-
     fn decide(&mut self, round: Round) -> Action;
 }
