@@ -71,6 +71,10 @@ impl Trick {
     pub const fn is_finished(&self) -> bool {
         self.cards.len() == 4
     }
+
+    pub const fn cards(&self) -> Array<Card, 4> {
+        self.cards
+    }
 }
 
 impl Debug for Trick {

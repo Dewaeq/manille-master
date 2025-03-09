@@ -225,6 +225,10 @@ impl Round {
         ActionCollection::Trumps(bits)
     }
 
+    pub const fn trick_ref(&self) -> &Trick {
+        &self.trick
+    }
+
     pub const fn player_cards(&self, player: usize) -> Stack {
         self.player_cards[player]
     }
