@@ -55,6 +55,10 @@ pub fn run() {
                         state = state.observe_action(observer.unwrap(), action);
                     }
                 }
+                'l' => {
+                    let cards = state.player_cards(0);
+                    println!("{cards:?}");
+                }
                 'm' => {
                     let action = request_action(state.possible_actions()).pop().unwrap();
                     state.apply_action(action);
