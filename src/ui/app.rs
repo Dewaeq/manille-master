@@ -20,8 +20,10 @@ enum Screen {
 pub struct App {
     screen: Screen,
     card_history: Vec<Card>,
+    action_history: Vec<(usize, Action)>,
     round: Round,
     num_rounds: usize,
+    round_is_finished: bool,
     scores: [i16; 2],
     ai_player: MctsPlayer,
 }
@@ -30,9 +32,11 @@ impl Default for App {
     fn default() -> Self {
         App {
             screen: Screen::Home,
+            action_history: vec![],
             card_history: vec![],
             round: Round::new(0),
             num_rounds: 0,
+            round_is_finished: false,
             ai_player: MctsPlayer::default().set_search_time(150),
             scores: [0; 2],
         }
@@ -44,6 +48,7 @@ impl App {
         if let Action::PlayCard(card) = action {
             self.card_history.push(card);
         }
+        self.action_history.push((self.round.turn(), action));
         self.round.apply_action(action);
     }
 
@@ -58,16 +63,26 @@ impl App {
         self.do_ai_moves();
 
         if self.round.is_terminal() {
-            let scores = self.round.scores();
-            let winning_team = if scores[0] > scores[1] { 0 } else { 1 };
-            info!("round scores: {scores:?}");
-            self.scores[winning_team] += scores[winning_team] - 30;
-
-            assert!(scores.iter().sum::<i16>() == 60);
-            self.num_rounds += 1;
-            self.round.setup_for_next_round();
-            self.card_history.clear();
+            self.round_is_finished = true;
         }
+    }
+
+    fn finish_round(&mut self) {
+        if !self.round_is_finished {
+            return;
+        }
+
+        let scores = self.round.scores();
+        let winning_team = if scores[0] > scores[1] { 0 } else { 1 };
+        info!("round scores: {scores:?}");
+        self.scores[winning_team] += scores[winning_team] - 30;
+
+        assert!(scores.iter().sum::<i16>() == 60);
+        self.num_rounds += 1;
+        self.round.setup_for_next_round();
+        self.card_history.clear();
+        self.action_history.clear();
+        self.round_is_finished = false;
 
         self.do_ai_moves();
     }
@@ -113,15 +128,26 @@ impl App {
         egui::CentralPanel::default().show(ctx, |ui| {
             let cards = self.round.trick_ref().cards().into_vec();
 
-            ui.vertical_centered(|ui| {
-                self.show_cards(card_width, &cards, ui);
-                if self.card_history.len() >= 4 {
-                    let in_this_round = self.round.trick_ref().cards().len();
-                    let end = self.card_history.len() - in_this_round;
-                    let cards = self.card_history[(end - 4)..end].to_vec();
+            if self.round_is_finished && ui.button("Start next round").clicked() {
+                self.finish_round();
+            }
 
-                    self.show_cards(card_width * 0.5, &cards, ui);
-                }
+            ui.horizontal_centered(|ui| {
+                ui.vertical_centered(|ui| {
+                    self.show_cards(card_width * 1.6, &cards, ui);
+                    if self.card_history.len() >= 4 {
+                        let in_this_round = self.round.trick_ref().cards().len();
+                        let end = self.card_history.len() - in_this_round;
+                        let cards = self.card_history[(end - 4)..end].to_vec();
+
+                        self.show_cards(card_width * 0.5, &cards, ui);
+                    }
+                });
+                ui.vertical(|ui| {
+                    for &(player, action) in &self.action_history {
+                        ui.label(format!("player {player} plays {action}"));
+                    }
+                })
             });
         });
 
