@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use ismcts::{action_list::ActionList, state::State};
 
-use crate::{action::Action, players::PlayerVec, round::Round, stack::Stack};
+use crate::{action::Action, card::Card, players::PlayerVec, round::Round, stack::Stack};
 
 const MAX_SCORE: i16 = 61;
 
@@ -82,6 +82,14 @@ impl Game {
 
     pub const fn num_rounds(&self) -> usize {
         self.num_rounds
+    }
+
+    pub const fn round_ref(&self) -> &Round {
+        &self.round
+    }
+
+    pub const fn scores(&self) -> [i16; 2] {
+        self.scores
     }
 
     pub fn is_terminal(&self) -> bool {

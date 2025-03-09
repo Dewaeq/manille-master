@@ -8,20 +8,21 @@ use crate::{
     io::card_image_src,
     players::{mcts_player::MctsPlayer, Player},
     round::{Round, RoundPhase},
-    trick::Trick,
 };
 
+#[derive(Default)]
 enum Screen {
+    #[default]
     Home,
     Game,
 }
 
 pub struct App {
     screen: Screen,
+    card_history: Vec<Card>,
     round: Round,
-    prev_trick: Option<Trick>,
     num_rounds: usize,
-    scores: [i32; 2],
+    scores: [i16; 2],
     ai_player: MctsPlayer,
 }
 
@@ -29,32 +30,52 @@ impl Default for App {
     fn default() -> Self {
         App {
             screen: Screen::Home,
+            card_history: vec![],
             round: Round::new(0),
             num_rounds: 0,
+            ai_player: MctsPlayer::default().set_search_time(150),
             scores: [0; 2],
-            ai_player: MctsPlayer::default(),
-            prev_trick: None,
         }
     }
 }
 
 impl App {
-    fn select_card(&mut self, card: Card) {
-        if self.round.turn() == 0 {
-            let possible_actions = self.round.possible_actions();
-            let action = match self.round.phase() {
-                RoundPhase::PlayCards => Action::PlayCard(card),
-                RoundPhase::PickTrump => Action::PickTrump(Some(card.suite())),
-            };
+    fn apply_action(&mut self, action: Action) {
+        if let Action::PlayCard(card) = action {
+            self.card_history.push(card);
+        }
+        self.round.apply_action(action);
+    }
 
-            if possible_actions.has(&action) {
-                self.round.apply_action(action);
+    fn click_action(&mut self, action: Action, ctx: &eframe::egui::Context) {
+        info!("clicked on {action:?}");
+        if self.round.turn() != 0 || !self.round.possible_actions().has(&action) {
+            return;
+        }
 
-                while !self.round.is_terminal() && self.round.turn() != 0 {
-                    let action = self.ai_player.decide(self.round);
-                    self.round.apply_action(action);
-                }
-            }
+        self.apply_action(action);
+
+        self.do_ai_moves();
+
+        if self.round.is_terminal() {
+            let scores = self.round.scores();
+            let winning_team = if scores[0] > scores[1] { 0 } else { 1 };
+            info!("round scores: {scores:?}");
+            self.scores[winning_team] += scores[winning_team] - 30;
+
+            assert!(scores.iter().sum::<i16>() == 60);
+            self.num_rounds += 1;
+            self.round.setup_for_next_round();
+            self.card_history.clear();
+        }
+
+        self.do_ai_moves();
+    }
+
+    fn do_ai_moves(&mut self) {
+        while !self.round.is_terminal() && self.round.turn() != 0 {
+            let action = self.ai_player.decide(self.round);
+            self.apply_action(action);
         }
     }
 }
@@ -77,34 +98,56 @@ impl App {
 
     fn display_game(&mut self, ctx: &eframe::egui::Context) {
         let screen_width = ctx.screen_rect().width();
-        let card_width = screen_width * 0.4 / 8.;
+        let card_width = screen_width * 0.6 / 8.;
 
         egui::TopBottomPanel::top("scores_and_trump").show(ctx, |ui| {
-            ui.horizontal_centered(|ui| {
-                ui.label(format!("scores: {:?}", self.scores));
-                ui.label(format!("trump: {:?}", self.round.trump()));
-            })
+            ui.vertical_centered(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label(format!("scores: {:?}", self.scores));
+                    ui.label(format!("trump: {:?}", self.round.trump()));
+                });
+                ui.label(format!("round score: {:?}", self.round.scores()));
+            });
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            let cards = self
-                .round
-                .trick_ref()
-                .cards()
-                .iter()
-                .copied()
-                .collect::<Vec<_>>();
+            let cards = self.round.trick_ref().cards().into_vec();
 
             ui.vertical_centered(|ui| {
                 self.show_cards(card_width, &cards, ui);
+                if self.card_history.len() >= 4 {
+                    let in_this_round = self.round.trick_ref().cards().len();
+                    let end = self.card_history.len() - in_this_round;
+                    let cards = self.card_history[(end - 4)..end].to_vec();
+
+                    self.show_cards(card_width * 0.5, &cards, ui);
+                }
             });
         });
 
         egui::TopBottomPanel::bottom("player_cards").show(ctx, |ui| {
-            ui.vertical_centered(|ui| {
-                let cards = self.round.player_cards(0).into_iter().collect::<Vec<_>>();
-                self.show_cards(card_width, &cards, ui);
+            ui.vertical_centered(|ui| match self.round.phase() {
+                RoundPhase::PickTrump if self.round.turn() == 0 => {
+                    self.show_trump_actions(ui);
+                    let cards = self.round.player_cards(0).into_vec();
+                    self.show_cards(card_width, &cards, ui);
+                }
+                _ => {
+                    let cards = self.round.player_cards(0).into_vec();
+                    self.show_cards(card_width, &cards, ui);
+                }
             });
+        });
+    }
+
+    fn show_trump_actions(&mut self, ui: &mut egui::Ui) {
+        let actions = self.round.possible_actions().to_vec();
+        ui.horizontal(|ui| {
+            for action in actions {
+                if ui.button(format!("{action:?}")).clicked() {
+                    self.click_action(action, ui.ctx());
+                }
+            }
         });
     }
 
@@ -115,12 +158,12 @@ impl App {
                 let btn = egui::ImageButton::new(src);
 
                 let enabled = self.round.turn() == 0
-                    && (self.round.phase() == RoundPhase::PickTrump
-                        || self.round.possible_actions().has(&Action::PlayCard(card)));
+                    && self.round.phase() == RoundPhase::PlayCards
+                    && self.round.possible_actions().has(&Action::PlayCard(card));
 
                 ui.add_enabled_ui(enabled, |ui| {
                     if ui.add_sized([card_width, card_width * 1.5], btn).clicked() {
-                        self.select_card(card);
+                        self.click_action(Action::PlayCard(card), ui.ctx());
                     }
                 });
             }
