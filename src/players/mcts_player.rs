@@ -29,7 +29,8 @@ impl Player for MctsPlayer {
             for &(stats, action) in result.child_stats.iter() {
                 println!(
                     "{action}:\tscore={:.5},\tsims={}",
-                    stats.avg_score, stats.num_sims
+                    stats.avg_score * 30.,
+                    stats.num_sims
                 );
             }
         }

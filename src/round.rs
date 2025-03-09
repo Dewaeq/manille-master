@@ -295,12 +295,7 @@ impl State for Round {
         assert!(self.is_terminal());
 
         let team = perspective % 2;
-
-        match self.scores[team].cmp(&self.scores[1 - team]) {
-            Ordering::Greater => 1.,
-            Ordering::Less => 0.,
-            Ordering::Equal => 0.5,
-        }
+        (self.scores[team] - 30) as f32 / 30.
     }
 }
 
