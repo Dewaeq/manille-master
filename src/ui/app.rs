@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use eframe::egui;
 use ismcts::{action_list::ActionList, state::State};
 use log::info;
@@ -26,6 +28,8 @@ pub struct App {
     round_is_finished: bool,
     scores: [i16; 2],
     ai_player: MctsPlayer,
+    ai_has_to_move: bool,
+    last_move_time: Option<Instant>,
 }
 
 impl Default for App {
@@ -37,8 +41,10 @@ impl Default for App {
             round: Round::new(0),
             num_rounds: 0,
             round_is_finished: false,
-            ai_player: MctsPlayer::default().set_search_time(150),
+            ai_player: MctsPlayer::default().set_search_time(400),
+            ai_has_to_move: false,
             scores: [0; 2],
+            last_move_time: None,
         }
     }
 }
@@ -48,23 +54,24 @@ impl App {
         if let Action::PlayCard(card) = action {
             self.card_history.push(card);
         }
+
+        self.last_move_time = Some(Instant::now());
         self.action_history.push((self.round.turn(), action));
         self.round.apply_action(action);
+        self.check_if_ai_has_to_move();
+
+        if self.round.is_terminal() {
+            self.round_is_finished = true;
+        }
     }
 
-    fn click_action(&mut self, action: Action, ctx: &eframe::egui::Context) {
+    fn click_action(&mut self, action: Action) {
         info!("clicked on {action:?}");
         if self.round.turn() != 0 || !self.round.possible_actions().has(&action) {
             return;
         }
 
         self.apply_action(action);
-
-        self.do_ai_moves();
-
-        if self.round.is_terminal() {
-            self.round_is_finished = true;
-        }
     }
 
     fn finish_round(&mut self) {
@@ -84,14 +91,26 @@ impl App {
         self.action_history.clear();
         self.round_is_finished = false;
 
-        self.do_ai_moves();
+        self.check_if_ai_has_to_move();
     }
 
-    fn do_ai_moves(&mut self) {
-        while !self.round.is_terminal() && self.round.turn() != 0 {
+    fn do_ai_move(&mut self, ctx: &eframe::egui::Context) {
+        if let Some(t) = self.last_move_time {
+            if t.elapsed().as_millis() < 500 {
+                ctx.request_repaint();
+                return;
+            }
+        }
+
+        self.check_if_ai_has_to_move();
+        if self.ai_has_to_move {
             let action = self.ai_player.decide(self.round);
             self.apply_action(action);
         }
+    }
+
+    fn check_if_ai_has_to_move(&mut self) {
+        self.ai_has_to_move = !self.round.is_terminal() && self.round.turn() != 0;
     }
 }
 
@@ -171,7 +190,7 @@ impl App {
         ui.horizontal(|ui| {
             for action in actions {
                 if ui.button(format!("{action:?}")).clicked() {
-                    self.click_action(action, ui.ctx());
+                    self.click_action(action);
                 }
             }
         });
@@ -189,7 +208,7 @@ impl App {
 
                 ui.add_enabled_ui(enabled, |ui| {
                     if ui.add_sized([card_width, card_width * 1.5], btn).clicked() {
-                        self.click_action(Action::PlayCard(card), ui.ctx());
+                        self.click_action(Action::PlayCard(card));
                     }
                 });
             }
@@ -202,6 +221,10 @@ impl eframe::App for App {
         match self.screen {
             Screen::Home => self.display_home(ctx),
             Screen::Game => self.display_game(ctx),
+        }
+
+        if self.ai_has_to_move {
+            self.do_ai_move(ctx);
         }
     }
 }
