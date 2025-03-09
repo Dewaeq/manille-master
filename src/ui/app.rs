@@ -6,7 +6,9 @@ use crate::{
     action::Action,
     card::Card,
     io::card_image_src,
+    players::{mcts_player::MctsPlayer, Player},
     round::{Round, RoundPhase},
+    trick::Trick,
 };
 
 enum Screen {
@@ -17,8 +19,10 @@ enum Screen {
 pub struct App {
     screen: Screen,
     round: Round,
+    prev_trick: Option<Trick>,
     num_rounds: usize,
     scores: [i32; 2],
+    ai_player: MctsPlayer,
 }
 
 impl Default for App {
@@ -28,6 +32,8 @@ impl Default for App {
             round: Round::new(0),
             num_rounds: 0,
             scores: [0; 2],
+            ai_player: MctsPlayer::default(),
+            prev_trick: None,
         }
     }
 }
@@ -43,6 +49,11 @@ impl App {
 
             if possible_actions.has(&action) {
                 self.round.apply_action(action);
+
+                while !self.round.is_terminal() && self.round.turn() != 0 {
+                    let action = self.ai_player.decide(self.round);
+                    self.round.apply_action(action);
+                }
             }
         }
     }
@@ -67,33 +78,52 @@ impl App {
     fn display_game(&mut self, ctx: &eframe::egui::Context) {
         let screen_width = ctx.screen_rect().width();
         let card_width = screen_width * 0.4 / 8.;
+
+        egui::TopBottomPanel::top("scores_and_trump").show(ctx, |ui| {
+            ui.horizontal_centered(|ui| {
+                ui.label(format!("scores: {:?}", self.scores));
+                ui.label(format!("trump: {:?}", self.round.trump()));
+            })
+        });
+
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                let played_cards = self.round.trick_ref().cards();
-                for card in played_cards.iter() {
-                    let src = card_image_src(card);
-                    let img = egui::Image::new(src)
-                        .fit_to_exact_size(egui::Vec2::new(card_width, card_width * 1.5));
-                    ui.add(img);
-                }
+            let cards = self
+                .round
+                .trick_ref()
+                .cards()
+                .iter()
+                .copied()
+                .collect::<Vec<_>>();
+
+            ui.vertical_centered(|ui| {
+                self.show_cards(card_width, &cards, ui);
             });
         });
 
         egui::TopBottomPanel::bottom("player_cards").show(ctx, |ui| {
             ui.vertical_centered(|ui| {
-                ui.horizontal(|ui| {
-                    let human_cards = self.round.player_cards(0);
-                    for card in human_cards.into_iter() {
-                        let src = card_image_src(&card);
-                        let img = egui::Image::new(src)
-                            .fit_to_exact_size(egui::Vec2::new(card_width, card_width * 1.5));
-                        if ui.add(img).clicked() {
-                            info!("selected {card}");
-                            self.select_card(card);
-                        }
+                let cards = self.round.player_cards(0).into_iter().collect::<Vec<_>>();
+                self.show_cards(card_width, &cards, ui);
+            });
+        });
+    }
+
+    fn show_cards(&mut self, card_width: f32, cards: &Vec<Card>, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            for &card in cards {
+                let src = card_image_src(&card);
+                let btn = egui::ImageButton::new(src);
+
+                let enabled = self.round.turn() == 0
+                    && (self.round.phase() == RoundPhase::PickTrump
+                        || self.round.possible_actions().has(&Action::PlayCard(card)));
+
+                ui.add_enabled_ui(enabled, |ui| {
+                    if ui.add_sized([card_width, card_width * 1.5], btn).clicked() {
+                        self.select_card(card);
                     }
                 });
-            });
+            }
         });
     }
 }
