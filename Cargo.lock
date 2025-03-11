@@ -39,7 +39,9 @@ dependencies = [
 
 [[package]]
 name = "ismcts"
-version = "0.2.4"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95781fff43c5773d971e9878acdc2df7c6c32282321c27f6bb4877b446c93c7e"
 dependencies = [
  "romu",
 ]

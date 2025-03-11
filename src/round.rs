@@ -277,7 +277,7 @@ impl Round {
 impl State for Round {
     type Action = Action;
     type ActionList = ActionCollection;
-    type Inferer = Inference;
+    type Inference = Inference;
 
     fn turn(&self) -> usize {
         match self.phase {
@@ -286,7 +286,7 @@ impl State for Round {
         }
     }
 
-    fn randomize(&self, observer: usize, inference: &Self::Inferer) -> Self {
+    fn randomize(&self, observer: usize, inference: &Self::Inference) -> Self {
         let observer_cards = self.player_cards[observer];
         let player_card_counts = std::array::from_fn(|i| self.player_cards[i].len() as usize);
 
