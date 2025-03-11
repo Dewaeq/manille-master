@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use ismcts::{action_list::ActionList, state::State};
 
-use crate::{action::Action, players::PlayerVec, round::Round, stack::Stack};
+use crate::{action::Action, inference::Inference, players::PlayerVec, round::Round, stack::Stack};
 
 const MAX_SCORE: i16 = 61;
 
@@ -10,6 +10,7 @@ const MAX_SCORE: i16 = 61;
 pub struct Game {
     players: PlayerVec,
     round: Round,
+    inference: Inference,
     num_rounds: usize,
     scores: [i16; 2],
 }
@@ -21,12 +22,14 @@ impl Game {
         Game {
             players,
             round: Round::new(dealer),
+            inference: Default::default(),
             num_rounds: 0,
             scores: [0; 2],
         }
     }
 
     fn apply_action(&mut self, action: Action) {
+        self.inference.infer(&self.round, action, self.round.turn());
         self.round.apply_action(action);
     }
 
@@ -35,7 +38,7 @@ impl Game {
 
         for i in turn..(turn + 4) {
             let player_idx = i % 4;
-            let action = self.players[player_idx].decide(self.round);
+            let action = self.players[player_idx].decide(self.round, &self.inference);
 
             match action {
                 Action::PlayCard(_) => {
@@ -50,9 +53,10 @@ impl Game {
 
     /// play an entire round, i.e. 8 tricks
     pub fn play_round(&mut self) {
+        self.inference = Inference::default();
         self.round.setup_for_next_round();
 
-        let action = self.players[self.round.turn()].decide(self.round);
+        let action = self.players[self.round.turn()].decide(self.round, &self.inference);
         self.apply_action(action);
 
         for _ in 0..8 {
@@ -112,18 +116,13 @@ impl Debug for Game {
 mod tests {
     use super::Game;
     use crate::{
-        players::{random_player::RandomPlayer, Player, PlayerVec},
+        players::{Player, PlayerVec},
         stack::Stack,
     };
 
     #[test]
     fn test_dealing() {
-        let players: PlayerVec = vec![
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
-        ];
+        let players: PlayerVec = vec![Player::RandomPlayer; 4];
 
         let game = Game::new(players);
         let mut seen_cards = Stack::default();
@@ -140,12 +139,7 @@ mod tests {
 
     #[test]
     fn test_random_game() {
-        let players: PlayerVec = vec![
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
-            RandomPlayer::boxed(),
-        ];
+        let players: PlayerVec = vec![Player::RandomPlayer; 4];
 
         let mut game = Game::new(players);
         while !game.is_terminal() {

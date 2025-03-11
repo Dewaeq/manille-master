@@ -1,10 +1,14 @@
 use core::fmt;
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 
+use rand::seq::IndexedRandom;
+
 use crate::{
     array::Array,
     bits::{lsb, msb, pop_lsb, pop_random_set_bit, select_random_set_bit},
     card::Card,
+    inference::Inference,
+    round::Round,
     suit::Suit,
 };
 
@@ -57,9 +61,9 @@ impl Stack {
         res
     }
 
-    pub fn from_slice(data: &[u32]) -> Self {
+    pub fn from_slice<'a>(data: impl IntoIterator<Item = &'a u32>) -> Self {
         let mut cards = Stack::default();
-        for i in data {
+        for &i in data {
             cards.data |= 1 << i;
         }
 
@@ -101,6 +105,63 @@ impl Stack {
             let index = pop_random_set_bit(&mut self.data);
             Some(Card::new(index))
         }
+    }
+
+    pub fn pop_lowest(&mut self) -> Option<Card> {
+        if self.data == 0 {
+            None
+        } else {
+            let index = pop_lsb(&mut self.data);
+            Some(Card::new(index))
+        }
+    }
+
+    pub fn push(&mut self, card: Card) {
+        self.data |= 1 << card.get_index()
+    }
+
+    pub fn clear(&mut self) {
+        self.data = 0;
+    }
+
+    pub fn random_weighted_subset(
+        &self,
+        k: usize,
+        mut weights: [f32; 32],
+        tering: Round,
+        schijt: &Inference,
+        player: usize,
+    ) -> Stack {
+        let n = self.data.count_ones();
+        if k >= n as _ {
+            return *self;
+        }
+
+        let mut count = 0;
+        let filtered_weights: [f32; 32] = std::array::from_fn(|i| {
+            if self.data & 1 << i != 0 && weights[i] != 0. {
+                count += 1;
+                weights[i]
+            } else {
+                0.
+            }
+        });
+
+        if count >= k {
+            weights = filtered_weights;
+        }
+
+        let mut selected = 0;
+        let ar: [usize; 32] = std::array::from_fn(|i| i);
+
+        let indices = ar
+            .choose_multiple_weighted(&mut rand::rng(), k, |&idx| weights[idx])
+            .unwrap();
+        for x in indices {
+            selected |= 1 << x;
+        }
+
+        Stack { data: selected }
     }
 
     pub fn pick_random_suite(&self) -> Suit {
@@ -159,6 +220,20 @@ impl Stack {
 
     pub fn all_above(card: Card) -> Stack {
         !Self::all_below(card)
+    }
+
+    pub const fn of_suite(&self, suite: Suit) -> Stack {
+        Stack {
+            data: self.data & suite.mask(),
+        }
+    }
+
+    pub fn above(&self, card: Card) -> Stack {
+        *self & Self::all_above(card)
+    }
+
+    pub fn below(&self, card: Card) -> Stack {
+        *self & Self::all_below(card)
     }
 
     pub const fn has_suite(&self, suite: Suit) -> bool {

@@ -1,7 +1,7 @@
-use crate::bench::bench;
-use crate::players::{mcts_player::MctsPlayer, random_player::RandomPlayer, Player, PlayerVec};
+use crate::players::PlayerVec;
 use crate::sprt::run_sprt;
 use crate::tournament::run_tournament_multithreaded;
+use crate::{bench::bench, players::Player};
 
 use super::{debugger, input};
 
@@ -19,10 +19,26 @@ pub fn handle_args(args: Vec<String>) {
         let think_time = input::read_parsed("think time: ").unwrap_or(100);
         let player_gen = move || -> PlayerVec {
             vec![
-                RandomPlayer::boxed(),
-                Box::new(MctsPlayer::default().set_search_time(think_time)),
-                RandomPlayer::boxed(),
-                Box::new(MctsPlayer::default().set_search_time(think_time)),
+                Player::MctsPlayer {
+                    searcher: Default::default(),
+                    search_time: think_time,
+                    use_inference: false,
+                },
+                Player::MctsPlayer {
+                    searcher: Default::default(),
+                    search_time: think_time,
+                    use_inference: true,
+                },
+                Player::MctsPlayer {
+                    searcher: Default::default(),
+                    search_time: think_time,
+                    use_inference: false,
+                },
+                Player::MctsPlayer {
+                    searcher: Default::default(),
+                    search_time: think_time,
+                    use_inference: true,
+                },
             ]
         };
         run_sprt(14, player_gen);
@@ -35,10 +51,18 @@ pub fn handle_args(args: Vec<String>) {
 
         let player_gen = move || -> PlayerVec {
             vec![
-                Box::new(MctsPlayer::default().set_search_time(think_time)),
-                RandomPlayer::boxed(),
-                Box::new(MctsPlayer::default().set_search_time(think_time)),
-                RandomPlayer::boxed(),
+                Player::RandomPlayer,
+                Player::MctsPlayer {
+                    searcher: Default::default(),
+                    search_time: think_time,
+                    use_inference: true,
+                },
+                Player::RandomPlayer,
+                Player::MctsPlayer {
+                    searcher: Default::default(),
+                    search_time: think_time,
+                    use_inference: true,
+                },
             ]
         };
 

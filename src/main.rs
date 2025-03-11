@@ -7,6 +7,7 @@ mod bench;
 mod bits;
 mod card;
 mod game;
+mod inference;
 mod io;
 mod players;
 mod round;
