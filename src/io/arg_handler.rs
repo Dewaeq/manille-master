@@ -1,3 +1,5 @@
+use crate::players::mcts_player::MctsPlayer;
+use crate::players::random_player::RandomPlayer;
 use crate::players::PlayerVec;
 use crate::sprt::run_sprt;
 use crate::tournament::run_tournament_multithreaded;
@@ -19,26 +21,10 @@ pub fn handle_args(args: Vec<String>) {
         let think_time = input::read_parsed("think time: ").unwrap_or(100);
         let player_gen = move || -> PlayerVec {
             vec![
-                Player::MctsPlayer {
-                    searcher: Default::default(),
-                    search_time: think_time,
-                    use_inference: false,
-                },
-                Player::MctsPlayer {
-                    searcher: Default::default(),
-                    search_time: think_time,
-                    use_inference: true,
-                },
-                Player::MctsPlayer {
-                    searcher: Default::default(),
-                    search_time: think_time,
-                    use_inference: false,
-                },
-                Player::MctsPlayer {
-                    searcher: Default::default(),
-                    search_time: think_time,
-                    use_inference: true,
-                },
+                Box::new(MctsPlayer::new(think_time, true)),
+                Box::new(MctsPlayer::new(think_time, false)),
+                Box::new(MctsPlayer::new(think_time, true)),
+                Box::new(MctsPlayer::new(think_time, false)),
             ]
         };
         run_sprt(14, player_gen);
@@ -51,18 +37,10 @@ pub fn handle_args(args: Vec<String>) {
 
         let player_gen = move || -> PlayerVec {
             vec![
-                Player::RandomPlayer,
-                Player::MctsPlayer {
-                    searcher: Default::default(),
-                    search_time: think_time,
-                    use_inference: true,
-                },
-                Player::RandomPlayer,
-                Player::MctsPlayer {
-                    searcher: Default::default(),
-                    search_time: think_time,
-                    use_inference: true,
-                },
+                RandomPlayer::boxed(),
+                Box::new(MctsPlayer::new(think_time, true)),
+                RandomPlayer::boxed(),
+                Box::new(MctsPlayer::new(think_time, true)),
             ]
         };
 

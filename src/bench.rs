@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use crate::{
     game::Game,
-    players::{Player, PlayerVec},
+    players::{random_player::RandomPlayer, Player, PlayerVec},
 };
 
 const BENCH_SIZE: usize = 800_000;
@@ -10,11 +10,11 @@ const BENCH_SIZE: usize = 800_000;
 pub fn bench(size: Option<usize>) {
     let size = size.unwrap_or(BENCH_SIZE);
 
-    start_simple_bench(size, "random", Player::RandomPlayer);
+    start_simple_bench::<RandomPlayer>(size, "random");
 }
 
-fn start_simple_bench(size: usize, name: &str, player: Player) {
-    let player_gen = || -> PlayerVec { vec![player.clone(); 4] };
+fn start_simple_bench<T: Player + Default + 'static>(size: usize, name: &str) {
+    let player_gen = || -> PlayerVec { vec![T::boxed(), T::boxed(), T::boxed(), T::boxed()] };
     run_bench(size, name, false, player_gen);
 }
 

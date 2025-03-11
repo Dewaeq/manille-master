@@ -4,6 +4,7 @@ use crate::action::Action;
 use crate::action_collection::ActionCollection;
 use crate::inference::Inference;
 use crate::io::input;
+use crate::players::mcts_player::MctsPlayer;
 use crate::players::Player;
 use crate::round::{Round, RoundPhase};
 use crate::stack::Stack;
@@ -11,28 +12,24 @@ use crate::stack::Stack;
 pub fn run() {
     let mut state = Round::new(romu::range_usize(0..4));
     let mut inference = Inference::default();
-    let mut player = Player::MctsPlayer {
-        searcher: Default::default(),
-        search_time: 1000,
-        use_inference: true,
-    };
+    let mut player = MctsPlayer::new(1000, true);
     let mut observer = None;
 
     loop {
         for c in input::read_line().chars() {
             match c {
                 'q' => return,
-                //'+' => {
-                //    let prev_time = player.get_search_time();
-                //    player = MctsPlayer::default().set_search_time(prev_time + 100);
-                //}
-                //'-' => {
-                //    let prev_time = player.get_search_time();
-                //    player = MctsPlayer::default().set_search_time(prev_time - 100);
-                //}
-                //'t' => {
-                //    println!("current search time: {}", player.get_search_time());
-                //}
+                '+' => {
+                    let prev_time = player.get_search_time();
+                    player = MctsPlayer::default().set_search_time(prev_time + 100);
+                }
+                '-' => {
+                    let prev_time = player.get_search_time();
+                    player = MctsPlayer::default().set_search_time(prev_time - 100);
+                }
+                't' => {
+                    println!("current search time: {}", player.get_search_time());
+                }
                 'c' => {
                     println!("\x1B[2J\x1B[1;1H");
                 }

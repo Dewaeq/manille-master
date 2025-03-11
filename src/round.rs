@@ -96,37 +96,10 @@ impl Round {
             let chosen_player = players
                 .choose_weighted(&mut rng, |&player| inference.weight(player, card))
                 .unwrap_or(players.choose(&mut rng).unwrap());
-            round.player_cards[*chosen_player].push(card);
 
+            round.player_cards[*chosen_player].push(card);
             player_card_counts[*chosen_player] -= 1;
             players.clear();
-        }
-
-        //for i in 1..=3 {
-        //    let player = (observer + i) % 4;
-        //    let n = player_card_counts[player];
-        //    let selected = cards_to_deal.random_weighted_subset(
-        //        n,
-        //        inference.weights(player),
-        //        *self,
-        //        inference,
-        //        player,
-        //    );
-        //
-        //    assert!(selected.len() == n as u32);
-        //
-        //    round.player_cards[player] = selected;
-        //    cards_to_deal &= !selected;
-        //}
-        //
-        for i in 0..4 {
-            if round.player_cards(i) & round.player_cards((i + 1) % 4) != 0 {
-                dbg!(observer);
-                dbg!(self);
-                dbg!(round);
-                dbg!(inference);
-            }
-            assert!(round.player_cards(i) & round.player_cards((i + 1) % 4) == 0);
         }
 
         round.player_cards[observer] = observer_cards;

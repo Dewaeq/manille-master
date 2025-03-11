@@ -116,13 +116,18 @@ impl Debug for Game {
 mod tests {
     use super::Game;
     use crate::{
-        players::{Player, PlayerVec},
+        players::{random_player::RandomPlayer, Player, PlayerVec},
         stack::Stack,
     };
 
     #[test]
     fn test_dealing() {
-        let players: PlayerVec = vec![Player::RandomPlayer; 4];
+        let players: PlayerVec = vec![
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+        ];
 
         let game = Game::new(players);
         let mut seen_cards = Stack::default();
@@ -139,7 +144,12 @@ mod tests {
 
     #[test]
     fn test_random_game() {
-        let players: PlayerVec = vec![Player::RandomPlayer; 4];
+        let players: PlayerVec = vec![
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+            RandomPlayer::boxed(),
+        ];
 
         let mut game = Game::new(players);
         while !game.is_terminal() {
