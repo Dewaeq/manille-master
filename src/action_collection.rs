@@ -15,7 +15,7 @@ const NO_TRUMP_MASK: u8 = 1 << NO_TRUMP_INDEX;
 #[derive(Clone, Copy)]
 pub enum ActionCollection {
     Cards(Stack),
-    /// bit 0..=3 are your regular suites
+    /// bit 0..=3 are your regular suits
     /// bit 4 means without trump
     Trumps(u8),
     Uninit,
@@ -57,8 +57,8 @@ impl ActionList<Action> for ActionCollection {
                 *stack |= 1 << card.get_index()
             }
             (ActionCollection::Trumps(bits), Action::PickTrump(trump)) => {
-                if let Some(suite) = trump {
-                    *bits |= 1 << suite as u8;
+                if let Some(suit) = trump {
+                    *bits |= 1 << suit as u8;
                 } else {
                     *bits |= 1 << NO_TRUMP_INDEX;
                 }
@@ -68,8 +68,8 @@ impl ActionList<Action> for ActionCollection {
                 *this = ActionCollection::Cards(stack);
             }
             (this @ ActionCollection::Uninit, Action::PickTrump(trump)) => {
-                let bits = if let Some(suite) = trump {
-                    1 << suite as u8
+                let bits = if let Some(suit) = trump {
+                    1 << suit as u8
                 } else {
                     1 << NO_TRUMP_INDEX
                 };
@@ -115,8 +115,8 @@ impl ActionList<Action> for ActionCollection {
         match (self, item) {
             (ActionCollection::Cards(stack), Action::PlayCard(card)) => stack.has_card(*card),
             (ActionCollection::Trumps(bits), Action::PickTrump(trump)) => {
-                if let Some(suite) = trump {
-                    *bits & 1 << *suite as u8 != 0
+                if let Some(suit) = trump {
+                    *bits & 1 << *suit as u8 != 0
                 } else {
                     *bits & NO_TRUMP_MASK != 0
                 }
@@ -145,16 +145,16 @@ impl Debug for ActionCollection {
         match self {
             Self::Cards(stack) => writeln!(f, "{stack:?}"),
             Self::Trumps(bits) => {
-                let mut suites = [Suit::Spades, Suit::Clubs, Suit::Hearts, Suit::Diamonds]
+                let mut suits = [Suit::Spades, Suit::Clubs, Suit::Hearts, Suit::Diamonds]
                     .into_iter()
                     .filter(|&s| bits & 1 << s as u8 != 0)
                     .map(Some)
                     .collect::<Vec<_>>();
                 if bits & NO_TRUMP_MASK != 0 {
-                    suites.push(None);
+                    suits.push(None);
                 }
 
-                writeln!(f, "{suites:?}")
+                writeln!(f, "{suits:?}")
             }
             Self::Uninit => writeln!(f, "Uninit"),
         }
