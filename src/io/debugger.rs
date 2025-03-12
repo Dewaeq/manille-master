@@ -42,6 +42,7 @@ pub fn run() {
                 }
                 'n' => {
                     state = Round::new(romu::range_usize(0..4));
+                    inference = Inference::default();
                 }
                 'r' => {
                     state = state.randomize(state.turn(), &inference);

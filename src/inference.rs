@@ -34,8 +34,10 @@ impl Inference {
             player.remove_card(card);
         }
 
+        let mut followed = true;
         if let Some(suit) = state.suite_to_follow() {
             if card.suite() != suit {
+                followed = false;
                 for card in state.unplayed_cards().of_suite(suit).into_iter() {
                     self.players[player].remove_card(card);
                 }
@@ -44,7 +46,7 @@ impl Inference {
 
         if let Some((winning_card, winning_player)) = state.trick_ref().winner() {
             // if the player is losing the trick and follows without buying,
-            // that means they have no higher cards
+            // that means they have no higher cards of that suit
             if winning_player % 2 != player % 2
                 && winning_card.suite() == card.suite()
                 && winning_card.value() > card.value()
@@ -52,6 +54,40 @@ impl Inference {
                 for card in state
                     .unplayed_cards()
                     .of_suite(card.suite())
+                    .above(winning_card)
+                    .into_iter()
+                {
+                    self.players[player].remove_card(card);
+                }
+            }
+
+            // likewise, if the player can't follow and doesn't
+            // play a trump when no trump has been played yet, that means they're void of trumps
+            if winning_player % 2 != player % 2
+                && !followed
+                && winning_card.suite() != card.suite()
+                && state
+                    .trump()
+                    .is_some_and(|trump| card.suite() != trump && winning_card.suite() != trump)
+            {
+                let trump = state.trump().unwrap();
+
+                for card in state.unplayed_cards().of_suite(trump).into_iter() {
+                    self.players[player].remove_card(card);
+                }
+            }
+
+            // if the player doesn't follow and the current winning card is a trump, which they don't beat,
+            // than they don't have any higher trumps than the winning card
+            if winning_player % 2 != player % 2
+                && !followed
+                && state
+                    .trump()
+                    .is_some_and(|trump| card.suite() != trump && winning_card.suite() == trump)
+            {
+                for card in state
+                    .unplayed_cards()
+                    .of_suite(winning_card.suite()) // i.e. trump
                     .above(winning_card)
                     .into_iter()
                 {
