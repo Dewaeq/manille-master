@@ -18,7 +18,7 @@ pub fn card_image_src(card: &Card) -> String {
     result.push_str(&card_name);
 
     result.push_str("_of_");
-    result.push_str(match card.suite() {
+    result.push_str(match card.suit() {
         Suit::Clubs => "clubs",
         Suit::Hearts => "hearts",
         Suit::Diamonds => "diamonds",

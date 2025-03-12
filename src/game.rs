@@ -88,14 +88,6 @@ impl Game {
         self.num_rounds
     }
 
-    pub const fn round_ref(&self) -> &Round {
-        &self.round
-    }
-
-    pub const fn scores(&self) -> [i16; 2] {
-        self.scores
-    }
-
     pub fn is_terminal(&self) -> bool {
         self.scores.iter().any(|&s| s >= MAX_SCORE)
     }

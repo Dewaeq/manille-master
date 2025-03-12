@@ -5,8 +5,15 @@ use ismcts::{action_list::ActionList, state::State};
 use log::info;
 
 use crate::{
-    action::Action, card::Card, inference::Inference, io::card_image_src, players::{mcts_player::MctsPlayer, Player}, round::{Round, RoundPhase}
+    action::Action,
+    card::Card,
+    inference::Inference,
+    io::card_image_src,
+    players::{mcts_player::MctsPlayer, Player},
+    round::{Round, RoundPhase},
 };
+
+const BETWEEN_PLAYERS_DELAY: u128 = 50;
 
 #[derive(Default)]
 enum Screen {
@@ -39,7 +46,7 @@ impl Default for App {
             inference: Inference::default(),
             num_rounds: 0,
             round_is_finished: false,
-            ai_player: MctsPlayer::default().set_search_time(400),
+            ai_player: MctsPlayer::default().set_search_time(800),
             ai_has_to_move: false,
             scores: [0; 2],
             last_move_time: None,
@@ -94,7 +101,7 @@ impl App {
 
     fn do_ai_move(&mut self, ctx: &eframe::egui::Context) {
         if let Some(t) = self.last_move_time {
-            if t.elapsed().as_millis() < 500 {
+            if t.elapsed().as_millis() < BETWEEN_PLAYERS_DELAY {
                 ctx.request_repaint();
                 return;
             }
