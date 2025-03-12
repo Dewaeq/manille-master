@@ -1,10 +1,11 @@
-use std::{cmp::Ordering, fmt::Debug};
+use std::fmt::Debug;
 
 use ismcts::state::State;
+use rand::seq::IndexedRandom;
 
 use crate::{
-    action::Action, action_collection::ActionCollection, card::Card, stack::Stack, suit::Suit,
-    trick::Trick,
+    action::Action, action_collection::ActionCollection, card::Card, inference::Inference,
+    stack::Stack, suit::Suit, trick::Trick,
 };
 
 #[derive(Default, Clone, Copy, Debug, PartialEq, Eq)]
@@ -44,6 +45,7 @@ impl Round {
             observer_cards,
             played_cards,
             player_card_counts,
+            &Inference::default(),
         );
 
         round.turn = turn;
@@ -55,15 +57,16 @@ impl Round {
         round
     }
 
-    pub fn observe_action(&self, observer: usize, action: Action) -> Self {
+    pub fn observe_action(&self, observer: usize, action: Action, inference: &Inference) -> Self {
         let mut round = *self;
         if let Action::PlayCard(card) = action {
             if !round.player_cards(round.turn()).has_card(card) {
                 round.player_cards[round.turn()].pop_random_card();
             }
         }
+
         round.apply_action(action);
-        round.randomize(observer)
+        round.randomize(observer, inference)
     }
 
     fn randomize_for(
@@ -71,23 +74,32 @@ impl Round {
         observer: usize,
         observer_cards: Stack,
         played_cards: Stack,
-        player_card_counts: [usize; 4],
+        mut player_card_counts: [usize; 4],
+        inference: &Inference,
     ) -> Self {
         let mut round = *self;
+        let mut cards_to_deal = Stack::ALL ^ observer_cards ^ played_cards;
+        let mut players = Vec::with_capacity(4);
 
-        let cards_to_deal = Stack::ALL ^ observer_cards ^ played_cards;
-        let mut indices = (0..32)
-            .filter(|&x| cards_to_deal.has_index(x))
-            .collect::<Vec<_>>();
+        for i in 0..4 {
+            round.player_cards[i].clear();
+        }
 
-        romu::shuffle(&mut indices);
-        let mut start = 0;
+        let mut rng = rand::rng();
+        while let Some(card) = cards_to_deal.pop_lowest() {
+            for i in 1..=3 {
+                let player = (observer + i) % 4;
+                if player_card_counts[player] > 0 {
+                    players.push(player);
+                }
+            }
+            let chosen_player = players
+                .choose_weighted(&mut rng, |&player| inference.weight(player, card))
+                .unwrap_or(players.choose(&mut rng).unwrap());
 
-        for i in 1..=3 {
-            let n = player_card_counts[(observer + i) % 4];
-            round.player_cards[(observer + i) % 4] =
-                Stack::from_slice(&indices[start..(start + n)]);
-            start += n;
+            round.player_cards[*chosen_player].push(card);
+            player_card_counts[*chosen_player] -= 1;
+            players.clear();
         }
 
         round.player_cards[observer] = observer_cards;
@@ -225,12 +237,12 @@ impl Round {
         ActionCollection::Trumps(bits)
     }
 
-    pub const fn trick_ref(&self) -> &Trick {
-        &self.trick
-    }
-
     pub const fn player_cards(&self, player: usize) -> Stack {
         self.player_cards[player]
+    }
+
+    pub fn unplayed_cards(&self) -> Stack {
+        !self.played_cards
     }
 
     pub const fn played_cards(&self) -> Stack {
@@ -249,6 +261,14 @@ impl Round {
         self.trick.trump()
     }
 
+    pub fn suite_to_follow(&self) -> Option<Suit> {
+        self.trick.suite_to_follow()
+    }
+
+    pub const fn trick_ref(&self) -> &Trick {
+        &self.trick
+    }
+
     pub const fn scores(&self) -> [i16; 2] {
         self.scores
     }
@@ -257,6 +277,7 @@ impl Round {
 impl State for Round {
     type Action = Action;
     type ActionList = ActionCollection;
+    type Inference = Inference;
 
     fn turn(&self) -> usize {
         match self.phase {
@@ -265,7 +286,7 @@ impl State for Round {
         }
     }
 
-    fn randomize(&self, observer: usize) -> Self {
+    fn randomize(&self, observer: usize, inference: &Self::Inference) -> Self {
         let observer_cards = self.player_cards[observer];
         let player_card_counts = std::array::from_fn(|i| self.player_cards[i].len() as usize);
 
@@ -274,6 +295,7 @@ impl State for Round {
             observer_cards,
             self.played_cards,
             player_card_counts,
+            inference,
         )
     }
 
@@ -299,12 +321,7 @@ impl State for Round {
         assert!(self.is_terminal());
 
         let team = perspective % 2;
-
-        match self.scores[team].cmp(&self.scores[1 - team]) {
-            Ordering::Greater => 1.,
-            Ordering::Less => 0.,
-            Ordering::Equal => 0.5,
-        }
+        (self.scores[team] - 30) as f32 / 30.
     }
 }
 

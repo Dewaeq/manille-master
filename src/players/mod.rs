@@ -1,4 +1,4 @@
-use crate::{action::Action, round::Round};
+use crate::{action::Action, inference::Inference, round::Round};
 
 pub mod mcts_player;
 pub mod random_player;
@@ -13,5 +13,5 @@ pub trait Player {
         Box::new(Self::default())
     }
 
-    fn decide(&mut self, round: Round) -> Action;
+    fn decide(&mut self, round: Round, inference: &Inference) -> Action;
 }

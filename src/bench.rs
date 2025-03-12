@@ -18,7 +18,12 @@ fn start_simple_bench<T: Player + Default + 'static>(size: usize, name: &str) {
     run_bench(size, name, false, player_gen);
 }
 
-fn run_bench(size: usize, name: &str, verbose: bool, player_gen: fn() -> PlayerVec) -> [i32; 2] {
+fn run_bench(
+    size: usize,
+    name: &str,
+    verbose: bool,
+    player_gen: impl Fn() -> PlayerVec,
+) -> [i32; 2] {
     println!("Simulating {size} random games for {name}...");
 
     let mut games = Vec::with_capacity(size);

@@ -10,7 +10,8 @@ bmi2 = []
 debug = []
 
 [dependencies]
-ismcts = "0.2.4"
+ismcts = "0.3.0"
+rand = "0.9.0"
 romu = "0.6.0"
 
 eframe = "0.31.1"

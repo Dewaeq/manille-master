@@ -5,11 +5,7 @@ use ismcts::{action_list::ActionList, state::State};
 use log::info;
 
 use crate::{
-    action::Action,
-    card::Card,
-    io::card_image_src,
-    players::{mcts_player::MctsPlayer, Player},
-    round::{Round, RoundPhase},
+    action::Action, card::Card, inference::Inference, io::card_image_src, players::{mcts_player::MctsPlayer, Player}, round::{Round, RoundPhase}
 };
 
 #[derive(Default)]
@@ -24,6 +20,7 @@ pub struct App {
     card_history: Vec<Card>,
     action_history: Vec<(usize, Action)>,
     round: Round,
+    inference: Inference,
     num_rounds: usize,
     round_is_finished: bool,
     scores: [i16; 2],
@@ -39,6 +36,7 @@ impl Default for App {
             action_history: vec![],
             card_history: vec![],
             round: Round::new(0),
+            inference: Inference::default(),
             num_rounds: 0,
             round_is_finished: false,
             ai_player: MctsPlayer::default().set_search_time(400),
@@ -104,7 +102,7 @@ impl App {
 
         self.check_if_ai_has_to_move();
         if self.ai_has_to_move {
-            let action = self.ai_player.decide(self.round);
+            let action = self.ai_player.decide(self.round, &self.inference);
             self.apply_action(action);
         }
     }

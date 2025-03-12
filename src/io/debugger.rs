@@ -2,14 +2,17 @@ use ismcts::state::State;
 
 use crate::action::Action;
 use crate::action_collection::ActionCollection;
+use crate::inference::Inference;
 use crate::io::input;
-use crate::players::{mcts_player::MctsPlayer, Player};
+use crate::players::mcts_player::MctsPlayer;
+use crate::players::Player;
 use crate::round::{Round, RoundPhase};
 use crate::stack::Stack;
 
 pub fn run() {
     let mut state = Round::new(romu::range_usize(0..4));
-    let mut player = MctsPlayer::default().set_search_time(1_000);
+    let mut inference = Inference::default();
+    let mut player = MctsPlayer::new(1000, true);
     let mut observer = None;
 
     loop {
@@ -32,12 +35,16 @@ pub fn run() {
                 }
                 'd' => {
                     dbg!(&state);
+                    dbg!(&inference);
                 }
                 'p' => {
                     dbg!(state.possible_actions());
                 }
                 'n' => {
                     state = Round::new(romu::range_usize(0..4));
+                }
+                'r' => {
+                    state = state.randomize(state.turn(), &inference);
                 }
                 'i' => {
                     state = input::read_round();
@@ -52,16 +59,22 @@ pub fn run() {
                     };
                     let actions = request_action(actions);
                     for action in actions {
-                        state = state.observe_action(observer.unwrap(), action);
+                        state = state.observe_action(observer.unwrap(), action, &inference);
                     }
+                }
+                'l' => {
+                    let cards = state.player_cards(0);
+                    println!("{cards:?}");
                 }
                 'm' => {
                     let action = request_action(state.possible_actions()).pop().unwrap();
+                    inference.infer(&state, action, state.turn());
                     state.apply_action(action);
                 }
                 'a' => {
-                    let action = player.decide(state);
+                    let action = player.decide(state, &inference);
                     println!("player {} plays {action:?}\n", state.turn());
+                    inference.infer(&state, action, state.turn());
                     state.apply_action(action);
                 }
                 _ => (),

@@ -1,4 +1,4 @@
-use std::{fmt::Debug, io::stdin, str::FromStr};
+use std::{io::stdin, str::FromStr};
 
 use crate::{
     round::{Round, RoundPhase},
