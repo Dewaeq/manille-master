@@ -30,18 +30,18 @@ impl Trick {
             Some((winner_card, _)) => match self.trump {
                 // playing with trump
                 Some(trump) => {
-                    let winner_suite = winner_card.suite();
-                    let card_suite = card.suite();
+                    let winner_suit = winner_card.suit();
+                    let card_suit = card.suit();
 
-                    if (card_suite == trump && winner_suite != trump)
-                        || (card.value() > winner_card.value() && card_suite == winner_suite)
+                    if (card_suit == trump && winner_suit != trump)
+                        || (card.value() > winner_card.value() && card_suit == winner_suit)
                     {
                         self.winner = Some((card, player));
                     }
                 }
                 // playing without trump
                 None => {
-                    if card.suite() == winner_card.suite() && card.value() > winner_card.value() {
+                    if card.suit() == winner_card.suit() && card.value() > winner_card.value() {
                         self.winner = Some((card, player));
                     }
                 }
@@ -60,8 +60,8 @@ impl Trick {
         self.score
     }
 
-    pub fn suite_to_follow(&self) -> Option<Suit> {
-        self.cards.get(0).map(|c| c.suite())
+    pub fn suit_to_follow(&self) -> Option<Suit> {
+        self.cards.get(0).map(|c| c.suit())
     }
 
     pub const fn trump(&self) -> Option<Suit> {

@@ -35,10 +35,10 @@ impl Inference {
         }
 
         let mut followed = true;
-        if let Some(suit) = state.suite_to_follow() {
-            if card.suite() != suit {
+        if let Some(suit) = state.suit_to_follow() {
+            if card.suit() != suit {
                 followed = false;
-                for card in state.unplayed_cards().of_suite(suit).into_iter() {
+                for card in state.unplayed_cards().of_suit(suit).into_iter() {
                     self.players[player].remove_card(card);
                 }
             }
@@ -48,12 +48,12 @@ impl Inference {
             // if the player is losing the trick and follows without buying,
             // that means they have no higher cards of that suit
             if winning_player % 2 != player % 2
-                && winning_card.suite() == card.suite()
+                && winning_card.suit() == card.suit()
                 && winning_card.value() > card.value()
             {
                 for card in state
                     .unplayed_cards()
-                    .of_suite(card.suite())
+                    .of_suit(card.suit())
                     .above(winning_card)
                     .into_iter()
                 {
@@ -65,14 +65,14 @@ impl Inference {
             // play a trump when no trump has been played yet, that means they're void of trumps
             if winning_player % 2 != player % 2
                 && !followed
-                && winning_card.suite() != card.suite()
+                && winning_card.suit() != card.suit()
                 && state
                     .trump()
-                    .is_some_and(|trump| card.suite() != trump && winning_card.suite() != trump)
+                    .is_some_and(|trump| card.suit() != trump && winning_card.suit() != trump)
             {
                 let trump = state.trump().unwrap();
 
-                for card in state.unplayed_cards().of_suite(trump).into_iter() {
+                for card in state.unplayed_cards().of_suit(trump).into_iter() {
                     self.players[player].remove_card(card);
                 }
             }
@@ -83,11 +83,11 @@ impl Inference {
                 && !followed
                 && state
                     .trump()
-                    .is_some_and(|trump| card.suite() != trump && winning_card.suite() == trump)
+                    .is_some_and(|trump| card.suit() != trump && winning_card.suit() == trump)
             {
                 for card in state
                     .unplayed_cards()
-                    .of_suite(winning_card.suite()) // i.e. trump
+                    .of_suit(winning_card.suit()) // i.e. trump
                     .above(winning_card)
                     .into_iter()
                 {
@@ -100,7 +100,7 @@ impl Inference {
     fn infer_trump(&mut self, state: &Round, player: usize, trump: Option<Suit>) {
         if let Some(suit) = trump {
             for (i, p) in self.players.iter_mut().enumerate() {
-                for card in state.unplayed_cards().of_suite(suit).into_iter() {
+                for card in state.unplayed_cards().of_suit(suit).into_iter() {
                     let prob = (card.value() as f32 + 5.) / 12. * 0.7;
                     if i == player {
                         p.set_if_has(card, prob);

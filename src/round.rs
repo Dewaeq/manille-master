@@ -182,24 +182,24 @@ impl Round {
         let mut cards = self.player_cards[self.turn];
 
         // have to follow if possible,
-        if let Some(suite) = self.trick.suite_to_follow() {
-            let filtered_cards = cards & suite.mask();
+        if let Some(suit) = self.trick.suit_to_follow() {
+            let filtered_cards = cards & suit.mask();
             if filtered_cards != 0 {
                 cards = filtered_cards;
             }
         }
 
-        // this also means we're not the first player, i.e. the suite
+        // this also means we're not the first player, i.e. the suit
         // to follow has been determined
         if let Some((winning_card, winning_player)) = self.trick.winner() {
             // our team isn't winning
             if winning_player % 2 != self.turn % 2 {
                 // have to buy if possible, but can't 'under-buy', except if that's our only possible move
                 if let Some(trump) = self.trick.trump() {
-                    let mut mask = Stack::all_above(winning_card) & winning_card.suite().mask();
+                    let mut mask = Stack::all_above(winning_card) & winning_card.suit().mask();
 
                     // we can play any trump if the current winning card isn't a trump
-                    if winning_card.suite() != trump {
+                    if winning_card.suit() != trump {
                         mask |= trump.mask();
                     }
 
@@ -209,9 +209,9 @@ impl Round {
                     }
                 }
                 // this means that we're playing without trump,
-                // so we simply need to play a higher card of the same suite
+                // so we simply need to play a higher card of the same suit
                 else {
-                    let mask = Stack::all_above(winning_card) & winning_card.suite().mask();
+                    let mask = Stack::all_above(winning_card) & winning_card.suit().mask();
                     let filtered_cards = cards & mask;
 
                     if filtered_cards != 0 {
@@ -228,9 +228,9 @@ impl Round {
         let cards = self.player_cards[self.dealer];
         let mut bits = 1 << 4;
 
-        for suite in [Suit::Spades, Suit::Clubs, Suit::Hearts, Suit::Diamonds] {
-            if cards.has_suite(suite) {
-                bits |= 1 << suite as u8;
+        for suit in [Suit::Spades, Suit::Clubs, Suit::Hearts, Suit::Diamonds] {
+            if cards.has_suit(suit) {
+                bits |= 1 << suit as u8;
             }
         }
 
@@ -261,8 +261,8 @@ impl Round {
         self.trick.trump()
     }
 
-    pub fn suite_to_follow(&self) -> Option<Suit> {
-        self.trick.suite_to_follow()
+    pub fn suit_to_follow(&self) -> Option<Suit> {
+        self.trick.suit_to_follow()
     }
 
     pub const fn trick_ref(&self) -> &Trick {

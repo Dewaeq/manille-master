@@ -15,7 +15,7 @@ use std::fmt;
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub struct Card {
     value: u8,
-    suite: Suit,
+    suit: Suit,
     index: u8,
 }
 
@@ -24,12 +24,12 @@ impl Card {
         Self::from_raw(index, None, None)
     }
 
-    pub const fn from_raw(index: u32, value: Option<u8>, suite: Option<Suit>) -> Self {
+    pub const fn from_raw(index: u32, value: Option<u8>, suit: Option<Suit>) -> Self {
         let value = match value {
             Some(v) => v,
             None => (index % 8) as _,
         };
-        let suite = match suite {
+        let suit = match suit {
             Some(s) => s,
             None => Suit::from_index(index),
         };
@@ -37,7 +37,7 @@ impl Card {
         Self {
             value,
             index: index as _,
-            suite,
+            suit,
         }
     }
 
@@ -58,8 +58,8 @@ impl Card {
         self.value as _
     }
 
-    pub const fn suite(&self) -> Suit {
-        self.suite
+    pub const fn suit(&self) -> Suit {
+        self.suit
     }
 
     pub const fn score(&self) -> i16 {
@@ -73,7 +73,7 @@ impl Card {
 
 impl fmt::Display for Card {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut result = self.suite.to_string();
+        let mut result = self.suit.to_string();
 
         let symbol = match self.value() {
             0..=2 => (self.value() + 7).to_string(),

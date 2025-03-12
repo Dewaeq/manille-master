@@ -120,15 +120,15 @@ impl Stack {
         self.data = 0;
     }
 
-    pub fn pick_random_suite(&self) -> Suit {
-        self.pick_random_card().suite()
+    pub fn pick_random_suit(&self) -> Suit {
+        self.pick_random_card().suit()
     }
 
-    pub const fn highest_of_suite(&self, suite: Suit) -> Option<Card> {
-        let masked = self.data & suite.mask();
+    pub const fn highest_of_suit(&self, suit: Suit) -> Option<Card> {
+        let masked = self.data & suit.mask();
 
         if masked != 0 {
-            Some(Card::from_raw(msb(masked), None, Some(suite)))
+            Some(Card::from_raw(msb(masked), None, Some(suit)))
         } else {
             None
         }
@@ -147,11 +147,11 @@ impl Stack {
         None
     }
 
-    pub const fn lowest_of_suite(&self, suite: Suit) -> Option<Card> {
-        let masked = self.data & suite.mask();
+    pub const fn lowest_of_suit(&self, suit: Suit) -> Option<Card> {
+        let masked = self.data & suit.mask();
 
         if masked != 0 {
-            Some(Card::from_raw(lsb(masked), None, Some(suite)))
+            Some(Card::from_raw(lsb(masked), None, Some(suit)))
         } else {
             None
         }
@@ -178,9 +178,9 @@ impl Stack {
         !Self::all_below(card)
     }
 
-    pub const fn of_suite(&self, suite: Suit) -> Stack {
+    pub const fn of_suit(&self, suit: Suit) -> Stack {
         Stack {
-            data: self.data & suite.mask(),
+            data: self.data & suit.mask(),
         }
     }
 
@@ -192,8 +192,8 @@ impl Stack {
         *self & Self::all_below(card)
     }
 
-    pub const fn has_suite(&self, suite: Suit) -> bool {
-        self.data & suite.mask() != 0
+    pub const fn has_suit(&self, suit: Suit) -> bool {
+        self.data & suit.mask() != 0
     }
 
     pub const fn has_card(&self, card: Card) -> bool {
