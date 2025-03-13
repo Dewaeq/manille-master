@@ -45,9 +45,11 @@ impl Inference {
         }
 
         if let Some((winning_card, winning_player)) = state.trick_ref().winner() {
+            let is_losing_trick = winning_player % 2 != player % 2;
+
             // if the player is losing the trick and follows without buying,
             // that means they have no higher cards of that suit
-            if winning_player % 2 != player % 2
+            if is_losing_trick
                 && winning_card.suit() == card.suit()
                 && winning_card.value() > card.value()
             {
@@ -63,7 +65,7 @@ impl Inference {
 
             // likewise, if the player can't follow and doesn't
             // play a trump when no trump has been played yet, that means they're void of trumps
-            if winning_player % 2 != player % 2
+            if is_losing_trick
                 && !followed
                 && winning_card.suit() != card.suit()
                 && state
@@ -77,9 +79,28 @@ impl Inference {
                 }
             }
 
+            // if the player is losing the trick and does not buy,
+            // they likely played their lowest card
+            if is_losing_trick
+                && !(winning_card.suit() == card.suit() && winning_card.value() < card.value())
+                && !(state
+                    .trump()
+                    .is_some_and(|trump| winning_card.suit() != trump && card.suit() == trump))
+            {
+                let cards = if followed {
+                    state.unplayed_cards().of_suit(card.suit())
+                } else {
+                    state.unplayed_cards()
+                };
+
+                for card in cards.below(card).into_iter() {
+                    self.players[player].scale(card, 0.7);
+                }
+            }
+
             // if the player doesn't follow and the current winning card is a trump, which they don't beat,
             // than they don't have any higher trumps than the winning card
-            if winning_player % 2 != player % 2
+            if is_losing_trick
                 && !followed
                 && state
                     .trump()
