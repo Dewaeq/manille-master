@@ -21,7 +21,6 @@ mod ui;
 
 fn main() {
     romu::seed();
-    env_logger::init();
 
     let options = eframe::NativeOptions::default();
 

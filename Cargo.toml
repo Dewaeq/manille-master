@@ -14,14 +14,9 @@ ismcts = "0.3.0"
 rand = "0.9.0"
 romu = "0.6.0"
 
-eframe = "0.31.1"
-egui_extras = { version = "0.31.1", features = ["default", "image", "file"] }
-image = { version = "0.25", features = ["jpeg", "png"] } 
-env_logger = { version = "0.11.6", default-features = false, features = [
-    "auto-color",
-    "humantime",
-] }
-log = "0.4.26"
+eframe = { version = "0.31.1", default-features = false, features = ["x11", "glow", "default_fonts"] }
+egui_extras = { version = "0.31.1", default-features = false, features = ["file", "image"] }
+image = { version = "0.25", default-features = false, features = ["png"] } 
 
 [profile.release]
 debug = true

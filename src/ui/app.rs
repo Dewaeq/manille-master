@@ -2,7 +2,6 @@ use std::time::Instant;
 
 use eframe::egui;
 use ismcts::{action_list::ActionList, state::State};
-use log::info;
 
 use crate::{
     action::Action,
@@ -71,7 +70,6 @@ impl App {
     }
 
     fn click_action(&mut self, action: Action) {
-        info!("clicked on {action:?}");
         if self.round.turn() != 0 || !self.round.possible_actions().has(&action) {
             return;
         }
@@ -86,7 +84,6 @@ impl App {
 
         let scores = self.round.scores();
         let winning_team = if scores[0] > scores[1] { 0 } else { 1 };
-        info!("round scores: {scores:?}");
         self.scores[winning_team] += scores[winning_team] - 30;
 
         assert!(scores.iter().sum::<i16>() == 60);
