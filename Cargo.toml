@@ -18,5 +18,4 @@ eframe = { version = "0.31.1", default-features = false, features = ["x11", "glo
 egui_extras = { version = "0.31.1", default-features = false, features = ["image"] }
 
 [profile.release]
-debug = true
 overflow-checks = false
