@@ -7,10 +7,11 @@ use crate::{
     action::Action,
     card::Card,
     inference::Inference,
-    io::card_image_src,
     players::{mcts_player::MctsPlayer, Player},
     round::{Round, RoundPhase},
 };
+
+use super::CARD_IMAGES;
 
 const BETWEEN_PLAYERS_DELAY: u128 = 50;
 
@@ -201,8 +202,8 @@ impl App {
     fn show_cards(&mut self, card_width: f32, cards: &Vec<Card>, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             for &card in cards {
-                let src = card_image_src(&card);
-                let btn = egui::ImageButton::new(src);
+                let image = CARD_IMAGES[card.get_index() as usize].clone();
+                let btn = egui::ImageButton::new(image);
 
                 let enabled = self.round.turn() == 0
                     && self.round.phase() == RoundPhase::PlayCards
