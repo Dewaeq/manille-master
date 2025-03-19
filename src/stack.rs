@@ -89,6 +89,10 @@ impl Stack {
         CardIterator(self.data).collect::<Array<_, 52>>()
     }
 
+    pub fn into_vec(self) -> Vec<Card> {
+        self.into_iter().collect::<Vec<_>>()
+    }
+
     pub fn pick_random_card(&self) -> Card {
         let index = select_random_set_bit(self.data);
         Card::new(index)

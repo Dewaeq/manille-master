@@ -51,6 +51,10 @@ impl<T: Copy + Default, const N: usize> Array<T, N> {
         self.data.iter().take(self.index)
     }
 
+    pub fn into_vec(self) -> Vec<T> {
+        self.data.into_iter().take(self.index).collect::<Vec<_>>()
+    }
+
     pub const fn len(&self) -> usize {
         self.index
     }
