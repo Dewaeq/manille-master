@@ -10,8 +10,9 @@ use macroquad::{
 use super::{app::TEXTURES, get_card_size, is_mouse_over};
 use crate::card::Card;
 
-const SPEED: f32 = 250.;
+const SPEED: f32 = 2000.;
 
+#[derive(Clone)]
 pub struct UiCard {
     pub card: Card,
     pub pos: Vec2,
@@ -61,11 +62,14 @@ impl UiCard {
             let delta = get_frame_time();
             let diff = target - self.pos;
             let dist = diff.length();
-            if dist < 5. {
+            let step = delta * SPEED * screen_height() / 1080.;
+
+            if dist < step {
+                self.pos = target;
                 self.is_moving = false;
-                return;
+            } else {
+                self.pos += diff.normalize() * step;
             }
-            self.pos += delta * SPEED * diff / dist * dist.clamp(1., 5.) * screen_height() / 1080.;
         }
     }
 
