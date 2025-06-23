@@ -174,13 +174,17 @@ impl App {
                     ),
                 );
             }
-            ui.slider(
-                hash!(),
-                "Think time (ms)",
-                10f32..5000f32,
-                &mut self.game.think_time,
-            );
         });
+        widgets::Group::new(hash!(), vec2(width * 0.3, height * 0.3))
+            .position(vec2(width * 0.7, 0.))
+            .ui(&mut root_ui(), |ui| {
+                ui.slider(
+                    hash!(),
+                    "Think time (ms)",
+                    10f32..5000f32,
+                    &mut self.game.think_time,
+                );
+            });
     }
 
     fn apply_action(&mut self, action: Action) {

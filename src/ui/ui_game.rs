@@ -65,11 +65,6 @@ impl UiGame {
 
         thread::spawn(move || {
             let action = ai_player.decide(round, &inference);
-            println!("action: {action:?}");
-            println!(
-                "result exists: {}",
-                ai_player.get_last_search_result().is_some()
-            );
             *result_slot.lock().unwrap() = Some(action);
             *search_result_slot.lock().unwrap() = ai_player.get_last_search_result();
             done_flag.store(true, Ordering::Release);

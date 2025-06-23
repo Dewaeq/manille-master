@@ -69,7 +69,6 @@ impl MctsPlayer {
     }
 
     pub fn get_last_search_result(&self) -> Option<SearchResult<Round>> {
-        println!("4");
         self.last_search_result.clone()
     }
 }
