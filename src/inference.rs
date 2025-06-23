@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use crate::{action::Action, card::Card, round::Round, suit::Suit};
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct Inference {
     players: [CardLikelihood; 4],
 }

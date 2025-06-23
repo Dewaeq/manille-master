@@ -29,17 +29,17 @@ impl MovingCard {
     }
 
     pub fn draw(&self, app: &App) {
-        let texture = &app.textures[&self.card.get_index()];
-        draw_texture_ex(
-            texture,
-            self.pos.x,
-            self.pos.y,
-            GRAY,
-            DrawTextureParams {
-                dest_size: Some(app.card_texture_size()),
-                ..Default::default()
-            },
-        );
+        // let texture = &app.textures[&self.card.get_index()];
+        // draw_texture_ex(
+        //     texture,
+        //     self.pos.x,
+        //     self.pos.y,
+        //     GRAY,
+        //     DrawTextureParams {
+        //         dest_size: Some(app.card_texture_size()),
+        //         ..Default::default()
+        //     },
+        // );
     }
 
     pub fn update(&mut self) -> bool {
