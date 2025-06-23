@@ -1,5 +1,14 @@
+use std::collections::HashMap;
+
 use io::arg_handler::handle_args;
-use ui::app::App;
+use macroquad::{
+    miniquad::window::screen_size,
+    prelude::*,
+    ui::{hash, root_ui, widgets, Layout},
+};
+use round::Round;
+use stack::Stack;
+use ui::{app::App, card_texture};
 
 mod action;
 mod action_collection;
@@ -19,23 +28,12 @@ mod tournament;
 mod trick;
 mod ui;
 
-fn main() -> eframe::Result {
-    let args: Vec<String> = std::env::args().collect();
+#[macroquad::main("main")]
+async fn main() {
     romu::seed();
+    // let args: Vec<String> = std::env::args().collect();
+    // handle_args(args);
 
-    if args.len() == 1 {
-        let options = eframe::NativeOptions::default();
-
-        eframe::run_native(
-            App::name(),
-            options,
-            Box::new(|cc| {
-                egui_extras::install_image_loaders(&cc.egui_ctx);
-                Ok(Box::<App>::default())
-            }),
-        )
-    } else {
-        handle_args(args);
-        Ok(())
-    }
+    let mut app = App::new().await;
+    app.run().await;
 }

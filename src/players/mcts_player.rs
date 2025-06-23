@@ -53,9 +53,8 @@ impl MctsPlayer {
         }
     }
 
-    pub fn set_search_time(mut self, time: u128) -> Self {
+    pub fn set_search_time(&mut self, time: u128) {
         self.search_time = time;
-        self
     }
 
     pub const fn get_search_time(&self) -> u128 {

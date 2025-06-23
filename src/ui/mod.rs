@@ -1,112 +1,31 @@
-use std::sync::LazyLock;
-use eframe::egui::{self, include_image, Image};
+use crate::{card::Card, suit::Suit};
+use macroquad::texture::{load_texture, Texture2D};
 
 pub mod app;
+pub mod hand;
+pub mod moving_card;
 
-static CARD_IMAGES: LazyLock<Vec<Image<'static>>> = LazyLock::new(|| store_images());
+pub async fn card_texture(card: Card) -> Texture2D {
+    let mut name = match card.value() {
+        0 => "7",
+        1 => "8",
+        2 => "9",
+        3 => "jack",
+        4 => "queen",
+        5 => "king",
+        6 => "ace",
+        7 => "10",
+        _ => panic!(),
+    }
+    .to_owned();
+    name += "_of_";
+    name += match card.suit() {
+        Suit::Clubs => "clubs",
+        Suit::Spades => "spades",
+        Suit::Hearts => "hearts",
+        Suit::Diamonds => "diamonds",
+    };
+    name += ".png";
 
-fn store_images() -> Vec<Image<'static>> {
-    let mut images = vec![];
-
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/7_of_spades.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/8_of_spades.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/9_of_spades.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/jack_of_spades.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/queen_of_spades.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/king_of_spades.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/ace_of_spades.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/10_of_spades.png"
-    )));
-
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/7_of_clubs.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/8_of_clubs.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/9_of_clubs.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/jack_of_clubs.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/queen_of_clubs.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/king_of_clubs.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/ace_of_clubs.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/10_of_clubs.png"
-    )));
-
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/7_of_hearts.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/8_of_hearts.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/9_of_hearts.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/jack_of_hearts.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/queen_of_hearts.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/king_of_hearts.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/ace_of_hearts.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/10_of_hearts.png"
-    )));
-
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/7_of_diamonds.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/8_of_diamonds.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/9_of_diamonds.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/jack_of_diamonds.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/queen_of_diamonds.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/king_of_diamonds.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/ace_of_diamonds.png"
-    )));
-    images.push(egui::Image::new(include_image!(
-        "../../assets/cards/10_of_diamonds.png"
-    )));
-
-    images
+    load_texture(&format!("assets/cards/{name}")).await.unwrap()
 }
