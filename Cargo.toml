@@ -14,6 +14,7 @@ ismcts = "0.3.3"
 rand = "0.9.0"
 romu = "0.6.0"
 macroquad = "0.4.14"
+rust-embed = "8.7.2"
 
 [profile.release]
 overflow-checks = false

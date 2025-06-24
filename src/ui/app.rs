@@ -13,8 +13,9 @@ use macroquad::{
 };
 
 use super::{
-    get_card_size,
+    get_bot_texture, get_card_size,
     hand::{Hand, SPACING_FACTOR},
+    load_textures,
     ui_card::UiCard,
     ui_game::UiGame,
 };
@@ -25,8 +26,6 @@ use crate::{
     stack::Stack,
     ui::card_texture,
 };
-
-pub static TEXTURES: OnceLock<HashMap<u32, Texture2D>> = OnceLock::new();
 
 pub struct App {
     game: UiGame,
@@ -39,16 +38,6 @@ pub struct App {
 
 impl App {
     pub async fn new() -> Self {
-        let mut textures = HashMap::new();
-        for card in Stack::ALL.into_iter() {
-            textures.insert(card.get_index(), card_texture(card).await);
-        }
-        for i in 1..4 {
-            let texture = load_texture(&format!("assets/bots/bot{i}.png")).await;
-            textures.insert(10000 + i, texture.unwrap());
-        }
-        TEXTURES.set(textures).unwrap();
-
         let label_style = root_ui()
             .style_builder()
             .text_color(Color::from_rgba(180, 180, 120, 255))
@@ -59,6 +48,7 @@ impl App {
             ..root_ui().default_skin()
         };
         root_ui().push_skin(&skin);
+        load_textures();
 
         App {
             game: Default::default(),
@@ -114,7 +104,8 @@ impl App {
         let width = screen_width();
         for i in 1..4 {
             let pos = self.get_player_position(i);
-            let texture = &TEXTURES.get().unwrap()[&(10000 + i as u32)];
+            let index = &(i as u32);
+            let texture = get_bot_texture(index);
             draw_texture_ex(
                 texture,
                 pos.x,

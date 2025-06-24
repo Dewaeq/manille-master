@@ -7,7 +7,7 @@ use macroquad::{
     window::screen_height,
 };
 
-use super::{app::TEXTURES, get_card_size, is_mouse_over};
+use super::{get_card_size, get_card_texture, is_mouse_over};
 use crate::card::Card;
 
 const SPEED: f32 = 2000.;
@@ -32,7 +32,7 @@ impl UiCard {
             is_moving: false,
             is_button,
             is_disabled: false,
-            texture: TEXTURES.get().unwrap()[&card.get_index()].clone(),
+            texture: get_card_texture(&card).clone(),
         }
     }
 
