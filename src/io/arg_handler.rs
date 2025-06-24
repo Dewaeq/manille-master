@@ -5,7 +5,8 @@ use crate::sprt::run_sprt;
 use crate::tournament::run_tournament_multithreaded;
 use crate::{bench::bench, players::Player};
 
-use super::{debugger, input};
+use super::debugger::Debugger;
+use super::input;
 
 pub fn handle_args(args: Vec<String>) {
     if args.contains(&"bench".to_owned()) {
@@ -14,7 +15,8 @@ pub fn handle_args(args: Vec<String>) {
     }
 
     if args.contains(&"d".to_owned()) {
-        debugger::run();
+        let mut d = Debugger::new();
+        d.run();
     }
 
     if args.contains(&"sprt".to_owned()) {

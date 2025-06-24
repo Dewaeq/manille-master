@@ -1,4 +1,10 @@
-use ismcts::{action_list::ActionList, searcher::Searcher, state::State};
+use std::time::Duration;
+
+use ismcts::{
+    action_list::ActionList,
+    searcher::{SearchResult, Searcher},
+    state::State,
+};
 
 use super::Player;
 use crate::{action::Action, inference::Inference, round::Round};
@@ -7,6 +13,7 @@ pub struct MctsPlayer {
     searcher: Searcher<Round>,
     search_time: u128,
     use_inference: bool,
+    last_search_result: Option<SearchResult<Round>>,
 }
 
 impl Player for MctsPlayer {
@@ -15,6 +22,13 @@ impl Player for MctsPlayer {
         {
             let mut actions = round.possible_actions();
             if actions.len() == 1 {
+                self.last_search_result = Some(SearchResult {
+                    num_simulations: 0,
+                    tree_size: 0,
+                    duration: Duration::default(),
+                    best_action: None,
+                    child_stats: vec![],
+                });
                 return actions.pop_random().unwrap();
             }
         }
@@ -25,6 +39,7 @@ impl Player for MctsPlayer {
         };
 
         let result = self.searcher.search(&round, inference, self.search_time);
+        self.last_search_result = Some(result.clone());
         #[cfg(feature = "debug")]
         {
             println!(
@@ -50,16 +65,20 @@ impl MctsPlayer {
             searcher: Searcher::default(),
             search_time,
             use_inference,
+            last_search_result: Default::default(),
         }
     }
 
-    pub fn set_search_time(mut self, time: u128) -> Self {
+    pub fn set_search_time(&mut self, time: u128) {
         self.search_time = time;
-        self
     }
 
     pub const fn get_search_time(&self) -> u128 {
         self.search_time
+    }
+
+    pub fn get_last_search_result(&self) -> Option<SearchResult<Round>> {
+        self.last_search_result.clone()
     }
 }
 
@@ -69,6 +88,7 @@ impl Default for MctsPlayer {
             searcher: Searcher::default(),
             search_time: 500,
             use_inference: true,
+            last_search_result: Default::default(),
         }
     }
 }

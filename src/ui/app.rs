@@ -1,233 +1,291 @@
-use std::time::Instant;
+use std::{collections::HashMap, sync::OnceLock};
 
-use eframe::egui;
-use ismcts::{action_list::ActionList, state::State};
-
-use crate::{
-    action::Action,
-    card::Card,
-    inference::Inference,
-    players::{mcts_player::MctsPlayer, Player},
-    round::{Round, RoundPhase},
+use ismcts::{searcher::SearchResult, state::State};
+use macroquad::{
+    color::{Color, DARKGRAY, WHITE, YELLOW},
+    math::{vec2, Vec2},
+    miniquad::window::screen_size,
+    shapes::draw_circle,
+    texture::{draw_texture_ex, load_texture, DrawTextureParams, Texture2D},
+    time::get_frame_time,
+    ui::{hash, root_ui, widgets, Skin},
+    window::{clear_background, next_frame, screen_width},
 };
 
-use super::CARD_IMAGES;
-
-const BETWEEN_PLAYERS_DELAY: u128 = 50;
-
-#[derive(Default)]
-enum Screen {
-    #[default]
-    Home,
-    Game,
-}
+use super::{
+    get_bot_texture, get_card_size,
+    hand::{Hand, SPACING_FACTOR},
+    load_textures,
+    ui_card::UiCard,
+    ui_game::UiGame,
+};
+use crate::{
+    action::Action,
+    action_collection::ActionCollection,
+    round::{Round, RoundPhase},
+    stack::Stack,
+    ui::card_texture,
+};
 
 pub struct App {
-    screen: Screen,
-    card_history: Vec<Card>,
-    action_history: Vec<(usize, Action)>,
-    round: Round,
-    inference: Inference,
-    num_rounds: usize,
-    round_is_finished: bool,
-    scores: [i16; 2],
-    ai_player: MctsPlayer,
-    ai_has_to_move: bool,
-    last_move_time: Option<Instant>,
+    game: UiGame,
+    moving_cards: Vec<UiCard>,
+    returning_cards: Vec<UiCard>,
+    time_since_last_action: f32,
+    wait_time: f32,
+    last_search_result: Option<SearchResult<Round>>,
 }
 
-impl Default for App {
-    fn default() -> Self {
+impl App {
+    pub async fn new() -> Self {
+        let label_style = root_ui()
+            .style_builder()
+            .text_color(Color::from_rgba(180, 180, 120, 255))
+            .font_size(45)
+            .build();
+        let skin = Skin {
+            label_style,
+            ..root_ui().default_skin()
+        };
+        root_ui().push_skin(&skin);
+        load_textures();
+
         App {
-            screen: Screen::Home,
-            action_history: vec![],
-            card_history: vec![],
-            round: Round::new(0),
-            inference: Inference::default(),
-            num_rounds: 0,
-            round_is_finished: false,
-            ai_player: MctsPlayer::default().set_search_time(800),
-            ai_has_to_move: false,
-            scores: [0; 2],
-            last_move_time: None,
+            game: Default::default(),
+            moving_cards: vec![],
+            returning_cards: vec![],
+            time_since_last_action: 0.,
+            wait_time: 0.,
+            last_search_result: None,
         }
     }
-}
 
-impl App {
+    pub async fn run(&mut self) {
+        loop {
+            clear_background(DARKGRAY);
+            self.wait_time -= get_frame_time();
+
+            self.clear_old_moving_cards();
+            self.check_next_ai_move();
+            self.render_bot_icons();
+            self.render_turn_indicator();
+            self.render_stats();
+            self.render_cards();
+
+            if self.game.round.phase() == RoundPhase::PickTrump && self.game.round.turn() == 0 {
+                self.render_pick_trump_message();
+            }
+            if self.game.round.is_terminal() {
+                self.render_next_round_message();
+            }
+
+            next_frame().await;
+        }
+    }
+
+    fn render_next_round_message(&mut self) {
+        let (width, height) = screen_size();
+        if root_ui().button(vec2(width * 0.45, height * 0.65), "Next round") {
+            self.game.round.setup_for_next_round();
+            self.moving_cards.clear();
+            self.returning_cards.clear();
+        }
+    }
+
+    fn render_pick_trump_message(&mut self) {
+        let (width, height) = screen_size();
+        root_ui().label(vec2(width * 0.45, height * 0.5 - 70.), "Select trump");
+        if root_ui().button(vec2(width * 0.45, height * 0.5), "Play without trump") {
+            self.apply_action(Action::PickTrump(None));
+        }
+    }
+
+    fn render_bot_icons(&self) {
+        let width = screen_width();
+        for i in 1..4 {
+            let pos = self.get_player_position(i);
+            let index = &(i as u32);
+            let texture = get_bot_texture(index);
+            draw_texture_ex(
+                texture,
+                pos.x,
+                pos.y,
+                WHITE,
+                DrawTextureParams {
+                    dest_size: Some(vec2(width * 0.08, width * 0.08)),
+                    ..Default::default()
+                },
+            );
+        }
+    }
+
+    fn render_turn_indicator(&self) {
+        let turn = self.game.round.turn();
+        let mut pos = self.get_player_position(turn);
+        if turn == 0 {
+            let card_size = get_card_size();
+            pos.x -=
+                card_size.x * SPACING_FACTOR * (self.game.round.player_cards(0).len() as f32) * 0.5;
+        }
+        draw_circle(pos.x, pos.y, 15., YELLOW);
+    }
+
+    fn render_cards(&mut self) {
+        let cards = self.game.round.player_cards(0);
+        let legal_actions = self.game.round.possible_actions();
+        let legal_cards = match legal_actions {
+            ActionCollection::Cards(stack) => stack,
+            ActionCollection::Trumps(_) => cards,
+            _ => unreachable!(),
+        };
+
+        if let Some(ui_card) = Hand::draw(cards, legal_cards) {
+            match self.game.round.phase() {
+                RoundPhase::PickTrump => {
+                    let trump = Some(ui_card.card.suit());
+                    self.apply_action(Action::PickTrump(trump));
+                }
+                RoundPhase::PlayCards => {
+                    self.apply_action(Action::PlayCard(ui_card.card));
+                    self.play_card(ui_card);
+                }
+            }
+        }
+
+        for moving_card in self
+            .returning_cards
+            .iter_mut()
+            .chain(self.moving_cards.iter_mut())
+        {
+            moving_card.draw();
+            moving_card.update();
+        }
+    }
+
+    fn render_stats(&mut self) {
+        let (width, height) = screen_size();
+        widgets::Group::new(hash!(), vec2(width * 0.3, height * 0.3)).ui(&mut root_ui(), |ui| {
+            ui.label(None, &format!("Trump: {:?}", self.game.round.trump()));
+            let scores = self.game.scores;
+            let round_scores = self.game.round.scores();
+            ui.label(None, &format!("Score: {} vs {}", scores[0], scores[1]));
+            ui.label(
+                None,
+                &format!("Round score: {} vs {}", round_scores[0], round_scores[1]),
+            );
+            if let Some(s) = self.last_search_result.clone() {
+                // ui.label(None, &format!("Tree size: {}", s.tree_size));
+                ui.label(None, &format!("Ran: {} simulations", s.num_simulations));
+                ui.label(
+                    None,
+                    &format!(
+                        "at: {} sims/sec",
+                        s.num_simulations as f32 / s.duration.as_secs_f32()
+                    ),
+                );
+            }
+        });
+        widgets::Group::new(hash!(), vec2(width * 0.3, height * 0.3))
+            .position(vec2(width * 0.7, 0.))
+            .ui(&mut root_ui(), |ui| {
+                ui.slider(
+                    hash!(),
+                    "Think time (ms)",
+                    10f32..5000f32,
+                    &mut self.game.think_time,
+                );
+            });
+    }
+
     fn apply_action(&mut self, action: Action) {
-        if let Action::PlayCard(card) = action {
-            self.card_history.push(card);
+        self.game.apply_action(action);
+        self.time_since_last_action = 0.;
+    }
+
+    fn play_card(&mut self, mut ui_card: UiCard) {
+        self.returning_cards.clear();
+        if self.moving_cards.len() == 4 {
+            self.moving_cards.clear();
         }
 
-        self.last_move_time = Some(Instant::now());
-        self.action_history.push((self.round.turn(), action));
-        self.round.apply_action(action);
-        self.check_if_ai_has_to_move();
-
-        if self.round.is_terminal() {
-            self.round_is_finished = true;
+        ui_card.is_button = false;
+        ui_card.is_moving = true;
+        ui_card.target_pos = Some(self.get_card_target_pos());
+        self.moving_cards.push(ui_card);
+        if self.moving_cards.len() == 4 {
+            self.wait_time = 1.7;
         }
     }
 
-    fn click_action(&mut self, action: Action) {
-        if self.round.turn() != 0 || !self.round.possible_actions().has(&action) {
-            return;
-        }
-
-        self.apply_action(action);
-    }
-
-    fn finish_round(&mut self) {
-        if !self.round_is_finished {
-            return;
-        }
-
-        let scores = self.round.scores();
-        let winning_team = if scores[0] > scores[1] { 0 } else { 1 };
-        self.scores[winning_team] += scores[winning_team] - 30;
-
-        assert!(scores.iter().sum::<i16>() == 60);
-        self.num_rounds += 1;
-        self.round.setup_for_next_round();
-        self.card_history.clear();
-        self.action_history.clear();
-        self.round_is_finished = false;
-
-        self.check_if_ai_has_to_move();
-    }
-
-    fn do_ai_move(&mut self, ctx: &eframe::egui::Context) {
-        if let Some(t) = self.last_move_time {
-            if t.elapsed().as_millis() < BETWEEN_PLAYERS_DELAY {
-                ctx.request_repaint();
-                return;
+    fn clear_old_moving_cards(&mut self) {
+        if self.moving_cards.len() == 4 && self.wait_time <= 0. {
+            self.returning_cards.clear();
+            let winner = self.game.round.turn();
+            let pos = self.get_player_position(winner);
+            for card in &mut self.moving_cards {
+                card.target_pos = Some(pos);
+                card.is_moving = true;
+                self.returning_cards.push(card.clone());
             }
+            self.moving_cards.clear();
+            self.wait_time = 1.5;
         }
 
-        self.check_if_ai_has_to_move();
-        if self.ai_has_to_move {
-            let action = self.ai_player.decide(self.round, &self.inference);
-            self.apply_action(action);
+        if !self.returning_cards.is_empty() && self.returning_cards.iter().all(|c| !c.is_moving) {
+            self.returning_cards.clear();
         }
     }
 
-    fn check_if_ai_has_to_move(&mut self) {
-        self.ai_has_to_move = !self.round.is_terminal() && self.round.turn() != 0;
-    }
-}
-
-impl App {
-    pub fn name() -> &'static str {
-        "Manille Master"
-    }
-
-    fn display_home(&mut self, ctx: &eframe::egui::Context) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.vertical_centered(|ui| {
-                ui.heading("Manille Master");
-                if ui.button("New Game").clicked() {
-                    self.screen = Screen::Game;
-                }
-            });
-        });
+    fn get_card_target_pos(&self) -> Vec2 {
+        let i = (self.game.round.played_cards().len() + 3) % 4;
+        let (width, height) = screen_size();
+        let card_width = get_card_size().x;
+        let padding = width * 0.5 - card_width * SPACING_FACTOR * 2.;
+        vec2(
+            padding + card_width * SPACING_FACTOR * (i) as f32,
+            height * 0.4,
+        )
     }
 
-    fn display_game(&mut self, ctx: &eframe::egui::Context) {
-        let screen_width = ctx.screen_rect().width();
-        let card_width = screen_width * 0.6 / 8.;
+    fn get_player_position(&self, player: usize) -> Vec2 {
+        let (width, height) = screen_size();
+        let positions = [
+            vec2(0.45 * width, 0.95 * height),
+            vec2(0.02 * width, 0.45 * height),
+            vec2(0.45 * width, 0.02 * height),
+            vec2(0.90 * width - 50., 0.45 * height),
+        ];
 
-        egui::TopBottomPanel::top("scores_and_trump").show(ctx, |ui| {
-            ui.vertical_centered(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label(format!("scores: {:?}", self.scores));
-                    ui.label(format!("trump: {:?}", self.round.trump()));
-                });
-                ui.label(format!("round score: {:?}", self.round.scores()));
-            });
-        });
+        positions[player]
+    }
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            let cards = self.round.trick_ref().cards().into_vec();
+    fn check_next_ai_move(&mut self) {
+        let turn = self.game.round.turn();
+        self.time_since_last_action += get_frame_time();
 
-            if self.round_is_finished && ui.button("Start next round").clicked() {
-                self.finish_round();
-            }
+        if self.time_since_last_action > 1.
+            && self.wait_time <= 0.
+            && turn != 0
+            && !self.game.round.is_terminal()
+            && !self.game.is_thinking
+        {
+            self.game.start_thinking();
+        }
 
-            ui.horizontal_centered(|ui| {
-                ui.vertical_centered(|ui| {
-                    self.show_cards(card_width * 1.6, &cards, ui);
-                    if self.card_history.len() >= 4 {
-                        let in_this_round = self.round.trick_ref().cards().len();
-                        let end = self.card_history.len() - in_this_round;
-                        let cards = self.card_history[(end - 4)..end].to_vec();
-
-                        self.show_cards(card_width * 0.5, &cards, ui);
+        if self.game.is_thinking {
+            if let Some(action) = self.game.load_ai_move() {
+                self.apply_action(action);
+                self.last_search_result = self.game.load_search_result();
+                match action {
+                    Action::PlayCard(card) => {
+                        let ui_card = UiCard::new(card, self.get_player_position(turn), false);
+                        self.play_card(ui_card);
                     }
-                });
-                ui.vertical(|ui| {
-                    for &(player, action) in &self.action_history {
-                        ui.label(format!("player {player} plays {action}"));
+                    Action::PickTrump(trump) => {
+                        println!("bot {turn} picked {trump:?}");
                     }
-                })
-            });
-        });
-
-        egui::TopBottomPanel::bottom("player_cards").show(ctx, |ui| {
-            ui.vertical_centered(|ui| match self.round.phase() {
-                RoundPhase::PickTrump if self.round.turn() == 0 => {
-                    self.show_trump_actions(ui);
-                    let cards = self.round.player_cards(0).into_vec();
-                    self.show_cards(card_width, &cards, ui);
-                }
-                _ => {
-                    let cards = self.round.player_cards(0).into_vec();
-                    self.show_cards(card_width, &cards, ui);
-                }
-            });
-        });
-    }
-
-    fn show_trump_actions(&mut self, ui: &mut egui::Ui) {
-        let actions = self.round.possible_actions().to_vec();
-        ui.horizontal(|ui| {
-            for action in actions {
-                if ui.button(format!("{action:?}")).clicked() {
-                    self.click_action(action);
                 }
             }
-        });
-    }
-
-    fn show_cards(&mut self, card_width: f32, cards: &Vec<Card>, ui: &mut egui::Ui) {
-        ui.horizontal(|ui| {
-            for &card in cards {
-                let image = CARD_IMAGES[card.get_index() as usize].clone();
-                let btn = egui::ImageButton::new(image);
-
-                let enabled = self.round.turn() == 0
-                    && self.round.phase() == RoundPhase::PlayCards
-                    && self.round.possible_actions().has(&Action::PlayCard(card));
-
-                ui.add_enabled_ui(enabled, |ui| {
-                    if ui.add_sized([card_width, card_width * 1.5], btn).clicked() {
-                        self.click_action(Action::PlayCard(card));
-                    }
-                });
-            }
-        });
-    }
-}
-
-impl eframe::App for App {
-    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
-        match self.screen {
-            Screen::Home => self.display_home(ctx),
-            Screen::Game => self.display_game(ctx),
-        }
-
-        if self.ai_has_to_move {
-            self.do_ai_move(ctx);
         }
     }
 }

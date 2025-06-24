@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use ismcts::state::State;
 
 use crate::action::Action;
@@ -9,78 +11,178 @@ use crate::players::Player;
 use crate::round::{Round, RoundPhase};
 use crate::stack::Stack;
 
-pub fn run() {
-    let mut state = Round::new(romu::range_usize(0..4));
-    let mut inference = Inference::default();
-    let mut player = MctsPlayer::new(1000, true);
-    let mut observer = None;
+struct Command {
+    name: char,
+    description: String,
+    task: fn(&mut Debugger),
+}
 
-    loop {
-        for c in input::read_line().chars() {
-            match c {
-                'q' => return,
-                '+' => {
-                    let prev_time = player.get_search_time();
-                    player = MctsPlayer::default().set_search_time(prev_time + 100);
+pub struct Debugger {
+    commands: HashMap<char, Command>,
+    state: Round,
+    inference: Inference,
+    player: MctsPlayer,
+}
+
+impl Debugger {
+    pub fn new() -> Self {
+        let mut debugger = Debugger {
+            commands: Default::default(),
+            state: Round::new(romu::range_usize(0..4)),
+            inference: Default::default(),
+            player: MctsPlayer::new(1000, true),
+        };
+        debugger.add_command(Command {
+            name: '+',
+            description: "increase search time by 100ms".to_owned(),
+            task: |d| {
+                let prev_time = d.player.get_search_time();
+                d.player.set_search_time(prev_time + 100);
+            },
+        });
+        debugger.add_command(Command {
+            name: '-',
+            description: "decrease search time by 100ms".to_owned(),
+            task: |d| {
+                let prev_time = d.player.get_search_time();
+                d.player.set_search_time(prev_time - 100);
+            },
+        });
+        debugger.add_command(Command {
+            name: 't',
+            description: "print current search time".to_owned(),
+            task: |d| {
+                let time = d.player.get_search_time();
+                println!("current search time: {time}");
+            },
+        });
+        debugger.add_command(Command {
+            name: 'c',
+            description: "clear screen".to_owned(),
+            task: |_| {
+                println!("\x1B[2J\x1B[1;1H");
+            },
+        });
+        debugger.add_command(Command {
+            name: 'd',
+            description: "print round state and inference".to_owned(),
+            task: |d| {
+                dbg!(&d.state);
+                dbg!(&d.inference);
+            },
+        });
+        debugger.add_command(Command {
+            name: 'p',
+            description: "print possible actions".to_owned(),
+            task: |d| {
+                dbg!(d.state.possible_actions());
+            },
+        });
+        debugger.add_command(Command {
+            name: 'n',
+            description: "start new round".to_owned(),
+            task: |d| {
+                d.state = Round::new(romu::range_usize(0..4));
+                d.inference = Inference::default();
+            },
+        });
+        debugger.add_command(Command {
+            name: 'r',
+            description: "randomize current round, except current player".to_owned(),
+            task: |d| d.state = d.state.randomize(d.state.turn(), &d.inference),
+        });
+        debugger.add_command(Command {
+            name: 'i',
+            description: "read an entire state from stdin".to_owned(),
+            task: |d| {
+                d.state = input::read_round();
+                d.inference = Default::default();
+            },
+        });
+        debugger.add_command(Command {
+            name: 'f',
+            description: "todo".to_owned(),
+            task: |d| {
+                let actions = match d.state.phase() {
+                    RoundPhase::PickTrump => ActionCollection::Trumps(0b11111),
+                    RoundPhase::PlayCards => {
+                        ActionCollection::Cards(Stack::ALL ^ d.state.played_cards())
+                    }
+                };
+                let actions = request_action(actions);
+                for action in actions {
+                    // d.state = d
+                    //     .state
+                    //     .observe_action(observer.unwrap(), action, &d.inference);
                 }
-                '-' => {
-                    let prev_time = player.get_search_time();
-                    player = MctsPlayer::default().set_search_time(prev_time - 100);
+            },
+        });
+        debugger.add_command(Command {
+            name: 'l',
+            description: "list all cards of player 0".to_owned(),
+            task: |d| {
+                let cards = d.state.player_cards(0);
+                println!("{cards:?}");
+            },
+        });
+        debugger.add_command(Command {
+            name: 'm',
+            description: "manually select an action for the current player".to_owned(),
+            task: |d| {
+                let actions = request_action(d.state.possible_actions());
+                if actions.len() != 1 {
+                    println!("operation aborted! should select only one action");
+                } else {
+                    let action = actions[0];
+                    d.inference.infer(&d.state, action, d.state.turn());
+                    d.state.apply_action(action);
                 }
-                't' => {
-                    println!("current search time: {}", player.get_search_time());
-                }
-                'c' => {
-                    println!("\x1B[2J\x1B[1;1H");
-                }
-                'd' => {
-                    dbg!(&state);
-                    dbg!(&inference);
-                }
-                'p' => {
-                    dbg!(state.possible_actions());
-                }
-                'n' => {
-                    state = Round::new(romu::range_usize(0..4));
-                    inference = Inference::default();
-                }
-                'r' => {
-                    state = state.randomize(state.turn(), &inference);
-                }
-                'i' => {
-                    state = input::read_round();
-                    observer = Some(0);
-                }
-                'f' => {
-                    let actions = match state.phase() {
-                        RoundPhase::PickTrump => ActionCollection::Trumps(0b11111),
-                        RoundPhase::PlayCards => {
-                            ActionCollection::Cards(Stack::ALL ^ state.played_cards())
+            },
+        });
+        debugger.add_command(Command {
+            name: 'a',
+            description: "let mcts select the current player's action".to_owned(),
+            task: |d| {
+                let action = d.player.decide(d.state, &d.inference);
+                println!("player {} plays {action:?}\n", d.state.turn());
+                d.inference.infer(&d.state, action, d.state.turn());
+                d.state.apply_action(action);
+            },
+        });
+
+        debugger
+    }
+
+    pub fn run(&mut self) {
+        loop {
+            for c in input::read_line().chars() {
+                match c {
+                    'q' => return,
+                    'h' => self.print_help(),
+                    _ => {
+                        if let Some(command) = self.commands.get(&c) {
+                            (command.task)(self);
                         }
-                    };
-                    let actions = request_action(actions);
-                    for action in actions {
-                        state = state.observe_action(observer.unwrap(), action, &inference);
                     }
                 }
-                'l' => {
-                    let cards = state.player_cards(0);
-                    println!("{cards:?}");
-                }
-                'm' => {
-                    let action = request_action(state.possible_actions()).pop().unwrap();
-                    inference.infer(&state, action, state.turn());
-                    state.apply_action(action);
-                }
-                'a' => {
-                    let action = player.decide(state, &inference);
-                    println!("player {} plays {action:?}\n", state.turn());
-                    inference.infer(&state, action, state.turn());
-                    state.apply_action(action);
-                }
-                _ => (),
             }
         }
+    }
+
+    fn add_command(&mut self, command: Command) {
+        self.commands.insert(command.name, command);
+    }
+
+    fn print_help(&self) {
+        println!("Manille master debug commands:");
+        let mut commands = self.commands.values().collect::<Vec<_>>();
+        commands.sort_by_key(|c| c.name);
+
+        for command in commands {
+            println!("{}:\t{}", command.name, command.description);
+        }
+        println!("q:\tquit");
+        println!();
     }
 }
 
@@ -99,7 +201,7 @@ fn request_action(possible_actions: ActionCollection) -> Vec<Action> {
             .map(|i| possible_actions[i])
             .collect::<Vec<_>>();
 
-        println!("selected: {selected_actions:#?}");
+        println!("selected: {selected_actions:#?}, press y to confirm");
         if input::read_line().contains("y") {
             return selected_actions;
         }

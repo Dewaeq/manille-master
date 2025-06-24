@@ -120,6 +120,10 @@ impl Stack {
         self.data |= 1 << card.get_index()
     }
 
+    pub fn remove(&mut self, card: Card) {
+        self.data &= !(1 << card.get_index());
+    }
+
     pub fn clear(&mut self) {
         self.data = 0;
     }
