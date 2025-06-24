@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use ismcts::{
     action_list::ActionList,
     searcher::{SearchResult, Searcher},
@@ -20,6 +22,12 @@ impl Player for MctsPlayer {
         {
             let mut actions = round.possible_actions();
             if actions.len() == 1 {
+                self.last_search_result = Some(SearchResult {
+                    num_simulations: 0,
+                    duration: Duration::default(),
+                    best_action: None,
+                    child_stats: vec![],
+                });
                 return actions.pop_random().unwrap();
             }
         }

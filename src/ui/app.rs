@@ -253,8 +253,8 @@ impl App {
         let turn = self.game.round.turn();
         self.time_since_last_action += get_frame_time();
 
-        if self.time_since_last_action > 1.5
-            && self.wait_time <= 0.
+        if self.time_since_last_action > 0.5
+            && self.wait_time <= self.game.think_time / 2.
             && turn != 0
             && !self.game.round.is_terminal()
             && !self.game.is_thinking
