@@ -273,7 +273,7 @@ impl App {
         self.time_since_last_action += get_frame_time();
 
         if self.time_since_last_action > 1.
-            && self.wait_time <= self.game.think_time / 2.
+            && self.wait_time <= 0.
             && turn != 0
             && !self.game.round.is_terminal()
             && !self.game.is_thinking
