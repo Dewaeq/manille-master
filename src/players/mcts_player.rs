@@ -24,6 +24,7 @@ impl Player for MctsPlayer {
             if actions.len() == 1 {
                 self.last_search_result = Some(SearchResult {
                     num_simulations: 0,
+                    tree_size: 0,
                     duration: Duration::default(),
                     best_action: None,
                     child_stats: vec![],

@@ -1,10 +1,11 @@
 use std::{collections::HashMap, sync::OnceLock};
 
-use ismcts::state::State;
+use ismcts::{searcher::SearchResult, state::State};
 use macroquad::{
-    color::{Color, DARKGRAY, WHITE},
+    color::{Color, DARKGRAY, WHITE, YELLOW},
     math::{vec2, Vec2},
     miniquad::window::screen_size,
+    shapes::draw_circle,
     texture::{draw_texture_ex, load_texture, DrawTextureParams, Texture2D},
     time::get_frame_time,
     ui::{hash, root_ui, widgets, Skin},
@@ -18,7 +19,10 @@ use super::{
     ui_game::UiGame,
 };
 use crate::{
-    action::Action, action_collection::ActionCollection, round::RoundPhase, stack::Stack,
+    action::Action,
+    action_collection::ActionCollection,
+    round::{Round, RoundPhase},
+    stack::Stack,
     ui::card_texture,
 };
 
@@ -30,6 +34,7 @@ pub struct App {
     returning_cards: Vec<UiCard>,
     time_since_last_action: f32,
     wait_time: f32,
+    last_search_result: Option<SearchResult<Round>>,
 }
 
 impl App {
@@ -61,6 +66,7 @@ impl App {
             returning_cards: vec![],
             time_since_last_action: 0.,
             wait_time: 0.,
+            last_search_result: None,
         }
     }
 
@@ -72,6 +78,7 @@ impl App {
             self.clear_old_moving_cards();
             self.check_next_ai_move();
             self.render_bot_icons();
+            self.render_turn_indicator();
             self.render_stats();
             self.render_cards();
 
@@ -121,6 +128,17 @@ impl App {
         }
     }
 
+    fn render_turn_indicator(&self) {
+        let turn = self.game.round.turn();
+        let mut pos = self.get_player_position(turn);
+        if turn == 0 {
+            let card_size = get_card_size();
+            pos.x -=
+                card_size.x * SPACING_FACTOR * (self.game.round.player_cards(0).len() as f32) * 0.5;
+        }
+        draw_circle(pos.x, pos.y, 15., YELLOW);
+    }
+
     fn render_cards(&mut self) {
         let cards = self.game.round.player_cards(0);
         let legal_actions = self.game.round.possible_actions();
@@ -164,7 +182,8 @@ impl App {
                 None,
                 &format!("Round score: {} vs {}", round_scores[0], round_scores[1]),
             );
-            if let Some(s) = self.game.load_search_result() {
+            if let Some(s) = self.last_search_result.clone() {
+                // ui.label(None, &format!("Tree size: {}", s.tree_size));
                 ui.label(None, &format!("Ran: {} simulations", s.num_simulations));
                 ui.label(
                     None,
@@ -253,7 +272,7 @@ impl App {
         let turn = self.game.round.turn();
         self.time_since_last_action += get_frame_time();
 
-        if self.time_since_last_action > 0.5
+        if self.time_since_last_action > 1.
             && self.wait_time <= self.game.think_time / 2.
             && turn != 0
             && !self.game.round.is_terminal()
@@ -265,6 +284,7 @@ impl App {
         if self.game.is_thinking {
             if let Some(action) = self.game.load_ai_move() {
                 self.apply_action(action);
+                self.last_search_result = self.game.load_search_result();
                 match action {
                     Action::PlayCard(card) => {
                         let ui_card = UiCard::new(card, self.get_player_position(turn), false);

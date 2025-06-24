@@ -10,7 +10,7 @@ bmi2 = []
 debug = []
 
 [dependencies]
-ismcts = "0.3.2"
+ismcts = "0.3.3"
 rand = "0.9.0"
 romu = "0.6.0"
 macroquad = "0.4.14"
