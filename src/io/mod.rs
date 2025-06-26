@@ -1,3 +1,4 @@
 pub mod arg_handler;
 mod debugger;
-mod input;
+pub mod input;
+
