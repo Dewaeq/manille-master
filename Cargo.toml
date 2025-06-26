@@ -9,6 +9,7 @@ edition = "2021"
 bmi2 = []
 debug = []
 log = []
+train = []
 
 [dependencies]
 ismcts = "0.3.3"

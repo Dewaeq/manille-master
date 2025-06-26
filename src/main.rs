@@ -22,7 +22,7 @@ mod tournament;
 mod trick;
 mod ui;
 
-#[cfg(not(feature = "log"))]
+#[cfg(not(any(feature = "log", feature = "train")))]
 #[macroquad::main("main")]
 async fn main() {
     romu::seed();
@@ -31,6 +31,13 @@ async fn main() {
 
     let mut app = App::new().await;
     app.run().await;
+}
+
+#[cfg(feature = "train")]
+fn main() {
+    use nn::train::train;
+
+    train("logs/log-2025-06-26_15-31-49.bin");
 }
 
 #[cfg(feature = "log")]

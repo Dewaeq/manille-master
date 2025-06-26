@@ -7,6 +7,7 @@ use crate::{
 use ismcts::state::State;
 use std::{
     io::stdin,
+    path::Path,
     sync::{
         atomic::{AtomicBool, AtomicUsize, Ordering},
         mpsc::{channel, Receiver},
@@ -42,6 +43,8 @@ pub fn start_log(num_threads: usize) -> Vec<LogEntry> {
     let stdin_channel = spawn_stdin_channel();
     let started = Instant::now();
     loop {
+        std::thread::sleep(Duration::from_millis(600));
+
         if let Ok(input) = stdin_channel.try_recv() {
             if input.contains("q") {
                 break;
@@ -52,7 +55,6 @@ pub fn start_log(num_threads: usize) -> Vec<LogEntry> {
             write_log(&entries);
         }
 
-        std::thread::sleep(Duration::from_millis(100));
         println!("\x1B[2J\x1B[1;1H");
         println!("press q to stop");
         println!("logged {} games", num_games.load(Ordering::Relaxed));
@@ -66,23 +68,6 @@ pub fn start_log(num_threads: usize) -> Vec<LogEntry> {
     let entries = Arc::into_inner(shared_log).unwrap().into_inner().unwrap();
     write_log(&entries);
     entries
-}
-
-fn write_log(entries: &Vec<LogEntry>) {
-    let mut bytes = vec![];
-    for entry in entries {
-        unsafe {
-            let ptr = (entry as *const LogEntry) as *const u8;
-            let size = std::mem::size_of::<LogEntry>();
-            let slice = core::slice::from_raw_parts(ptr, size);
-            bytes.extend_from_slice(slice);
-        }
-    }
-
-    let now = chrono::Local::now();
-    let time = now.format("%Y-%m-%d_%H-%M-%S");
-    let path = format!("logs/log-{}.bin", time);
-    std::fs::write(path, bytes).unwrap();
 }
 
 fn log_thread(
@@ -144,4 +129,30 @@ fn spawn_stdin_channel() -> Receiver<String> {
     });
 
     rx
+}
+
+fn write_log(entries: &Vec<LogEntry>) {
+    let mut bytes = vec![];
+    for entry in entries {
+        unsafe {
+            let ptr = (entry as *const LogEntry) as *const u8;
+            let size = std::mem::size_of::<LogEntry>();
+            let slice = core::slice::from_raw_parts(ptr, size);
+            bytes.extend_from_slice(slice);
+        }
+    }
+
+    let now = chrono::Local::now();
+    let time = now.format("%Y-%m-%d_%H-%M-%S");
+    let path = format!("logs/log-{}.bin", time);
+    std::fs::write(path, bytes).unwrap();
+}
+
+pub fn read_log<P: AsRef<Path>>(path: P) -> Vec<LogEntry> {
+    let data = std::fs::read(path).unwrap();
+    let len = data.len() / std::mem::size_of::<LogEntry>();
+    unsafe {
+        let slice = core::slice::from_raw_parts(data.as_ptr() as *const LogEntry, len);
+        slice.to_vec()
+    }
 }
