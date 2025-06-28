@@ -37,7 +37,18 @@ async fn main() {
 fn main() {
     use nn::train::train;
 
-    train("logs/log-2025-06-26_15-31-49.bin");
+    let args: Vec<String> = std::env::args().collect();
+    let log_file = args.get(2).cloned().unwrap_or_else(|| {
+        let mut entries = vec![];
+        for entry in std::fs::read_dir("logs").unwrap() {
+            entries.push(entry.unwrap());
+        }
+
+        entries.sort_by_key(|e| e.metadata().unwrap().created().unwrap());
+        entries.pop().unwrap().path().into_os_string().into_string().unwrap()
+    });
+
+    train(&log_file);
 }
 
 #[cfg(feature = "log")]
